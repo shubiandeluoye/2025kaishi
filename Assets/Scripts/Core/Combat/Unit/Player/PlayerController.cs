@@ -2,6 +2,7 @@ using UnityEngine;
 using Core.Combat.Unit.Base;
 using Core.Movement.Types;
 using Core.Skills.Shooting;
+using Core.Base.Event;
 
 namespace Core.Combat.Unit.Player
 {
@@ -37,14 +38,43 @@ namespace Core.Combat.Unit.Player
             HandleSkills();
         }
 
+        private void OnEnable()
+        {
+            EventManager.Instance.AddListener("OnMove", OnMove);
+            EventManager.Instance.AddListener("OnStraightShoot", OnStraightShoot);
+            EventManager.Instance.AddListener("OnLeftAngleShoot", OnLeftAngleShoot);
+            EventManager.Instance.AddListener("OnRightAngleShoot", OnRightAngleShoot);
+            EventManager.Instance.AddListener("OnToggleAngle", OnToggleAngle);
+            EventManager.Instance.AddListener("OnToggleBulletLevel", OnToggleBulletLevel);
+            EventManager.Instance.AddListener("OnFireLevel3Bullet", OnFireLevel3Bullet);
+        }
+
+        private void OnDisable()
+        {
+            EventManager.Instance.RemoveListener("OnMove", OnMove);
+            EventManager.Instance.RemoveListener("OnStraightShoot", OnStraightShoot);
+            EventManager.Instance.RemoveListener("OnLeftAngleShoot", OnLeftAngleShoot);
+            EventManager.Instance.RemoveListener("OnRightAngleShoot", OnRightAngleShoot);
+            EventManager.Instance.RemoveListener("OnToggleAngle", OnToggleAngle);
+            EventManager.Instance.RemoveListener("OnToggleBulletLevel", OnToggleBulletLevel);
+            EventManager.Instance.RemoveListener("OnFireLevel3Bullet", OnFireLevel3Bullet);
+        }
+
         private void HandleMovement()
         {
-            if (movement == null) return;
+            // Movement is now handled through events
+        }
 
-            float horizontal = Input.GetAxisRaw("Horizontal");
-            float vertical = Input.GetAxisRaw("Vertical");
+        private void HandleSkills()
+        {
+            // Skills are now handled through events
+        }
 
-            Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+        private void OnMove(object moveInput)
+        {
+            if (movement == null || !(moveInput is Vector2)) return;
+            Vector2 input = (Vector2)moveInput;
+            Vector3 direction = new Vector3(input.x, 0f, input.y).normalized;
             
             if (direction.magnitude >= 0.1f)
             {
@@ -52,28 +82,38 @@ namespace Core.Combat.Unit.Player
             }
         }
 
-        private void HandleSkills()
+        private void OnStraightShoot()
         {
-            if (skillManager == null) return;
+            if (skillManager == null || !skillManager.IsSkillReady(0)) return;
+            skillManager.ExecuteSkill(0, transform.forward);
+        }
 
-            Vector3 aimDirection = transform.forward;
+        private void OnLeftAngleShoot()
+        {
+            if (skillManager == null || !skillManager.IsSkillReady(1)) return;
+            skillManager.ExecuteSkill(1, transform.forward);
+        }
 
-            if (Input.GetMouseButtonDown(0) && skillManager.IsSkillReady(0))
-            {
-                skillManager.ExecuteSkill(0, aimDirection);
-            }
-            else if (Input.GetMouseButtonDown(1) && skillManager.IsSkillReady(1))
-            {
-                skillManager.ExecuteSkill(1, aimDirection);
-            }
-            else if (Input.GetKeyDown(KeyCode.Q) && skillManager.IsSkillReady(2))
-            {
-                skillManager.ExecuteSkill(2, aimDirection);
-            }
-            else if (Input.GetKeyDown(KeyCode.E) && skillManager.IsSkillReady(3))
-            {
-                skillManager.ExecuteSkill(3, aimDirection);
-            }
+        private void OnRightAngleShoot()
+        {
+            if (skillManager == null || !skillManager.IsSkillReady(2)) return;
+            skillManager.ExecuteSkill(2, transform.forward);
+        }
+
+        private void OnToggleAngle()
+        {
+            // Implement angle toggle logic
+        }
+
+        private void OnToggleBulletLevel()
+        {
+            // Implement bullet level toggle logic
+        }
+
+        private void OnFireLevel3Bullet()
+        {
+            if (skillManager == null || !skillManager.IsSkillReady(3)) return;
+            skillManager.ExecuteSkill(3, transform.forward);
         }
 
         public void OnMobileMove(Vector2 input)
