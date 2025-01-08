@@ -1,0 +1,280 @@
+[33mcommit c133bbe262a741ffc9f23eac446cf02d7632a44c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtest_network_new[m[33m, [m[1;31morigin/devin/1736340055-network-implementation[m[33m)[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Wed Jan 8 12:47:50 2025 +0000
+
+    feat: add network replication support to input system
+
+[33mcommit 8879bd8e60a4f26abc28f3faee19783607195e3e[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Wed Jan 8 12:45:27 2025 +0000
+
+    feat: implement network synchronization for player movement
+
+[33mcommit 9f63a52a055ad9826d79716566cfc36814854a7f[m[33m ([m[1;31morigin/devin/1736259206-input-shooting-mechanics[m[33m)[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 14:25:35 2025 +0000
+
+    feat: add Q/E key controls for bullet level management
+
+[33mcommit 240116e3fa15adc43373806c8641d5c34a62a85e[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 14:20:47 2025 +0000
+
+    feat: implement input system with shooting mechanics
+
+[33mcommit 9196a1384bc43660e216fa8cf1f5228ebc36394e[m[33m ([m[1;31morigin/devin/1736257029-angle-skill-implementation[m[33m)[m
+Merge: 9bc11ca c20d3a7
+Author: shubiandeluoye <wangjian85962674@163.com>
+Date:   Tue Jan 7 19:06:14 2025 +0800
+
+    Merge pull request #2 from shubiandeluoye/devin/1736227383-scene-setup
+    
+    feat: implement book-style scene layout and victory system
+
+[33mcommit c20d3a77f57d5ab2b5c9ed655976b3601640856f[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 09:03:07 2025 +0000
+
+    fix: use x-axis spawn positions for shapes in x-z plane
+
+[33mcommit a221b986c3ae5a02f6b2936aef6dd2a5ae526fc3[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 08:17:14 2025 +0000
+
+    feat: add ShapeSpawnManager to BookScene with spawn configuration
+
+[33mcommit 931f052ef4dbb51568720842928fb6c4a6ca1599[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 07:27:23 2025 +0000
+
+    feat: add VictoryManager to BookScene
+    
+    - Add GameManager object with VictoryManager component
+    - Configure initial player score to 100
+    - Set fall threshold to -5 units
+    - Ensure proper scene hierarchy for victory conditions
+
+[33mcommit fe4bfd3cca4802ce9a2ac81449a75ec713ec02e3[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 07:14:58 2025 +0000
+
+    feat: add middle shapes to book scene
+    
+    - Add CircleShape prefab (2x2) in center
+    - Add RectangleShape prefab (2x4) at bottom
+    - Add TrapezoidShape prefab (2.5x2.165) in middle
+    - Add Level2To3Shape prefab in center
+    - Position shapes in BookScene.unity middle section
+    - Add bullet prefabs for different levels
+
+[33mcommit 94eb2e796b91867f19e5b101457c6b4cbf353297[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 07:09:28 2025 +0000
+
+    feat: add middle shape scripts
+    
+    - Add CircleShape script for 2x2 explosive shape
+    - Add RectangleShape script for 2x4 disappearing shape
+    - Add TrapezoidShape script for rotating reflector
+    - Add Level2To3Shape script for bullet transformation
+
+[33mcommit 7fa747e74a3746aa3bbbe92253707f9699c65532[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 07:03:42 2025 +0000
+
+    feat: add bullet prefabs and base script
+    
+    - Add BulletBase script for bullet behavior and scoring
+    - Create Level1Bullet prefab (0.5x0.5 sphere)
+    - Create Level2Bullet prefab (horizontal capsule scaled 0.5)
+    - Create Level3Bullet prefab (3x3x1 book-shaped cube)
+    - Configure colliders and rigidbodies for all bullets
+    - Integrate with PlayerStats for scoring system
+
+[33mcommit c3751521f20c9b348f9a933ff573b3c63df114dd[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 06:04:16 2025 +0000
+
+    feat: add main game scene with camera and lighting
+    
+    - Add BookScene.unity with orthographic camera setup
+    - Configure directional lighting for proper scene illumination
+    - Add SceneLayout prefab to scene
+    - Set camera position for top-down view
+
+[33mcommit 352983243b95c4e44863b8d0ce051fccaff5ad5a[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:58:54 2025 +0000
+
+    feat: add 3D scene models and layout
+    
+    - Add BookSpine prefab (3x10 middle section)
+    - Add BookPage prefab (7x7 player areas)
+    - Add UIArea prefab (17x1.5 UI areas)
+    - Add SceneLayout script for managing scene dimensions
+    - Configure SceneLayout prefab with model references
+
+[33mcommit 166fe798637846344533d7a4f3a520d5312f6bb1[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:54:39 2025 +0000
+
+    feat: add angled bullet trajectories
+    
+    - Add BulletTrajectory script for angled paths
+    - Create 30-degree clockwise and counterclockwise bullet prefabs
+    - Create 45-degree clockwise and counterclockwise bullet prefabs
+    - Implement trajectory calculation ignoring Y axis
+
+[33mcommit c479a5de7926daab147e6f4c59ae75e7bd4a68a9[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:50:41 2025 +0000
+
+    feat: add PlayerStats component with 100-point system
+    
+    - Implement 100-point scoring system
+    - Add bullet hit detection with 1-point deduction
+    - Add health and defeat handling
+    - Configure event system for UI updates
+    - Update PlayerPrefab with PlayerStats component
+
+[33mcommit 52d596e2df2f69af95cceb5024c11ae45c3afa50[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:44:40 2025 +0000
+
+    feat: add UI system with prefabs and managers
+    
+    - Add HUD prefab with score, health, and ammo display
+    - Create Menu and GameOver prefabs with associated panels
+    - Implement UIAreaManager for 7x1.5 dimension areas
+    - Add BaseUIElement for common UI functionality
+    - Configure score display for 100-point system
+
+[33mcommit d9c3db63422a932e5cc1481f67d90580e774113f[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:42:14 2025 +0000
+
+    feat: add input system with desktop and mobile support
+    
+    - Add GameInputActions for movement and shooting controls
+    - Implement InputManager for input processing
+    - Add support for keyboard/mouse, gamepad, and touch input
+    - Configure input for skill-based shooting system
+    - Add support for directional shooting mechanics
+
+[33mcommit 79eda3bba15b465037380ea282670abdfcf87437[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:39:50 2025 +0000
+
+    feat: add main scene with manager setup
+    
+    - Add MainScene.unity with GameManager, EventManager, and VictoryManager
+    - Implement MainSceneSetup for book-style layout
+    - Configure scene dimensions (17x10 total, 3x10 center, 7x7 player areas)
+    - Add UI areas (7x1.5 top/bottom)
+    - Set up manager initialization
+
+[33mcommit 638ace1a37db906f0d098912e9f4386c4dbdf1b4[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:34:49 2025 +0000
+
+    feat: implement victory conditions and scoring system
+    
+    - Add 100-point player score system
+    - Implement bullet hit detection with 1-point deduction
+    - Add platform fall detection for victory condition
+    - Include comprehensive test coverage
+
+[33mcommit 094b5e3d5550e63768847c49254fdb9321e5a722[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:23:37 2025 +0000
+
+    feat: implement book-style scene layout
+    
+    - Create scene layout with 17x10 total area
+    - Add central 3x10 area for main content
+    - Add 7x7 player areas on left and right sides
+    - Add 7x1.5 UI areas on top and bottom
+    - Implement scene verification and interaction setup
+    - Add physics and collision configuration
+
+[33mcommit 6f57b54c55fa21da2ce426c309a79795cdf1355d[m[33m ([m[1;31morigin/devin/1736191109-network-interface[m[33m, [m[1;32mtest_network[m[33m)[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Tue Jan 7 05:03:39 2025 +0000
+
+    feat: implement skill-based shooting system
+    
+    - Add base skill system interfaces and classes
+    - Implement various shooting skills (Directional, Spread, Burst, Bounce)
+    - Add skill manager for handling multiple skills
+    - Include test component for system verification
+    - Built as extension of base library without modifications
+
+[33mcommit 9bc11caeb625eaee256d1d0471191f4aa3a1439e[m
+Merge: 882fd29 b7fe0e9
+Author: shubiandeluoye <wangjian85962674@163.com>
+Date:   Tue Jan 7 03:48:18 2025 +0800
+
+    Merge pull request #1 from shubiandeluoye/devin/1736191109-network-interface
+    
+    feat: add network interface layer
+
+[33mcommit b7fe0e9e526e841bbb7e094291b601d86434c65b[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Mon Jan 6 19:41:30 2025 +0000
+
+    feat: implement core game systems
+    
+    Added implementations for:
+    - Combat system (BaseUnit, BaseShooter, BaseBullet)
+    - Movement system (BaseMovement, DirectionalMovement, PathMovement)
+    - Interactive system (BaseInteractive, TriggerZone)
+    - Visual system (BaseVisualEffect, ParticleSystemController, ShaderController)
+    
+    All systems follow Unity best practices with:
+    - Component-based design
+    - Performance optimization
+    - Object pooling support
+    - Cross-platform compatibility
+
+[33mcommit 2591cf0a51363f85b08fffb99c38c03394a015e1[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Mon Jan 6 19:24:47 2025 +0000
+
+    feat: add core management systems
+    
+    - Add GameManager for game state, time, and scoring
+    - Add PoolManager for efficient object pooling
+    - Add EventManager for flexible event handling
+    
+    Each system follows Unity best practices with:
+    - Complete interface definitions
+    - Extension interfaces
+    - Component-based design
+    - High cohesion and low coupling
+
+[33mcommit 4e52e285739773e931004cb1e54d83f43fe88472[m
+Author: Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>
+Date:   Mon Jan 6 19:22:01 2025 +0000
+
+    feat: add network interface layer
+    
+    - Add INetworkService interface for network operations
+    - Add NetworkConfiguration for connection settings
+    - Add NetworkEvents for centralized event handling
+    - Add BaseNetworkImplementation for common functionality
+    
+    The network interface layer provides a flexible foundation that can
+    support different network implementations while maintaining high
+    cohesion and low coupling through well-defined interfaces.
+
+[33mcommit 882fd2984f127616fb696c49be63b035f82a1f89[m[33m ([m[1;32mmain[m[33m, [m[1;32mchakanwenti[m[33m, [m[1;32mbackup_main[m[33m)[m
+Author: shubiandeluoye <wangjian85962674@163.com>
+Date:   Tue Jan 7 03:01:51 2025 +0800
+
+    第二次
+
+[33mcommit c452f975cdedb5d649237636a4bc425bfbcdf660[m
+Author: shubiandeluoye <wangjian85962674@163.com>
+Date:   Mon Jan 6 23:46:39 2025 +0800
+
+    添加 .gitignore 并重新组织文件
