@@ -1,5 +1,7 @@
 using UnityEngine;
 using System;
+using Core.Base.Pool;
+using Core.Combat.Unit.Base;
 
 namespace Core.Combat.Bullet
 {
@@ -42,10 +44,11 @@ namespace Core.Combat.Bullet
         protected Vector3 direction;
         protected bool isInitialized;
         protected Rigidbody rb;
+        protected float currentLifetime;
+        protected BaseUnit owner;  // 从老版本添加
         #endregion
 
         #region Events
-        // 子弹碰撞和销毁事件
         public event Action<Collision> OnBulletCollision;
         public event Action<BaseBullet> OnBulletDestroy;
         #endregion
@@ -60,6 +63,12 @@ namespace Core.Combat.Bullet
             }
         }
 
+        protected virtual void OnEnable()
+        {
+            currentLifetime = settings.lifeTime;
+            isInitialized = false;
+        }
+
         protected virtual void Start()
         {
             if (!isInitialized)
@@ -67,12 +76,23 @@ namespace Core.Combat.Bullet
                 Debug.LogWarning($"Bullet {gameObject.name} was not initialized before Start");
                 Initialize(transform.forward);
             }
+        }
 
-            Destroy(gameObject, settings.lifeTime);
+        protected virtual void Update()
+        {
+            if (!isInitialized) return;
+
+            UpdateLifetime();
+            if (!settings.useGravity)
+            {
+                UpdateMovement();
+            }
         }
 
         protected virtual void FixedUpdate()
         {
+            if (!isInitialized || !settings.useGravity) return;
+            
             if (rb != null)
             {
                 UpdateMovement();
@@ -84,14 +104,12 @@ namespace Core.Combat.Bullet
         /// <summary>
         /// 初始化子弹
         /// </summary>
-        /// <param name="direction">子弹移动方向</param>
-        /// <param name="speed">可选：覆盖默认速度</param>
-        /// <param name="damage">可选：覆盖默认伤害</param>
-        public virtual void Initialize(Vector3 direction, float? speed = null, float? damage = null)
+        public virtual void Initialize(Vector3 direction, float? speed = null, float? damage = null, BaseUnit owner = null)
         {
             this.direction = direction.normalized;
             if (speed.HasValue) settings.speed = speed.Value;
             if (damage.HasValue) settings.damage = damage.Value;
+            this.owner = owner;  // 从老版本添加
             
             isInitialized = true;
             
@@ -105,13 +123,19 @@ namespace Core.Combat.Bullet
         #region Movement
         /// <summary>
         /// 更新子弹移动
-        /// 如果不使用重力，保持恒定速度
         /// </summary>
         protected virtual void UpdateMovement()
         {
             if (!settings.useGravity)
             {
-                rb.velocity = direction * settings.speed;
+                if (rb != null)
+                {
+                    rb.velocity = direction * settings.speed;
+                }
+                else
+                {
+                    transform.position += direction * (settings.speed * Time.deltaTime);
+                }
             }
         }
         #endregion
@@ -121,6 +145,13 @@ namespace Core.Combat.Bullet
         {
             if (settings.collisionMask == -1 || (settings.collisionMask & (1 << collision.gameObject.layer)) != 0)
             {
+                // 检查是否击中可伤害单位
+                BaseUnit hitUnit = collision.gameObject.GetComponent<BaseUnit>();
+                if (hitUnit != null && hitUnit != owner)
+                {
+                    ApplyDamage(hitUnit);
+                }
+
                 OnBulletCollision?.Invoke(collision);
                 HandleCollision(collision);
             }
@@ -128,25 +159,71 @@ namespace Core.Combat.Bullet
 
         /// <summary>
         /// 处理碰撞逻辑
-        /// 子类可以重写此方法来实现特定的碰撞行为
         /// </summary>
         protected virtual void HandleCollision(Collision collision)
         {
-            // 默认行为是销毁子弹
+            ApplyImpactEffects(collision);
             DestroyBullet();
+        }
+
+        /// <summary>
+        /// 应用伤害
+        /// </summary>
+        protected virtual void ApplyDamage(BaseUnit target)
+        {
+            target.TakeDamage(settings.damage, owner);
+        }
+
+        /// <summary>
+        /// 应用碰撞特效
+        /// </summary>
+        protected virtual void ApplyImpactEffects(Collision collision)
+        {
+            if (PoolManager.Instance != null)
+            {
+                GameObject impactEffect = PoolManager.Instance.Spawn("BulletImpact", 
+                    collision.contacts[0].point, 
+                    Quaternion.LookRotation(collision.contacts[0].normal));
+                    
+                if (impactEffect != null)
+                {
+                    PoolManager.Instance.Despawn("BulletImpact", impactEffect);
+                }
+            }
         }
         #endregion
 
-        #region Utility
+        #region Lifetime Management
+        protected virtual void UpdateLifetime()
+        {
+            if (currentLifetime > 0)
+            {
+                currentLifetime -= Time.deltaTime;
+                if (currentLifetime <= 0)
+                {
+                    DestroyBullet();
+                }
+            }
+        }
+
         /// <summary>
         /// 销毁子弹
         /// </summary>
         public virtual void DestroyBullet()
         {
             OnBulletDestroy?.Invoke(this);
-            Destroy(gameObject);
+            if (PoolManager.Instance != null)
+            {
+                PoolManager.Instance.Despawn("Bullet", gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
+        #endregion
 
+        #region Utility
         /// <summary>
         /// 获取子弹伤害值
         /// </summary>
@@ -161,6 +238,23 @@ namespace Core.Combat.Bullet
         public virtual void SetDamage(float damage)
         {
             settings.damage = damage;
+        }
+
+        /// <summary>
+        /// 修改子弹轨迹
+        /// </summary>
+        public virtual void ModifyTrajectory(Vector3 newDirection, float? newSpeed = null)
+        {
+            direction = newDirection.normalized;
+            if (newSpeed.HasValue)
+            {
+                settings.speed = newSpeed.Value;
+            }
+
+            if (rb != null && settings.useGravity)
+            {
+                rb.velocity = direction * settings.speed;
+            }
         }
         #endregion
     }
