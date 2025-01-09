@@ -40,7 +40,7 @@ namespace Core.Skills.Shooting
                 }
             }
 
-            currentCooldown = cooldownTime;
+            currentCooldown = cooldownDuration;
         }
     }
 }

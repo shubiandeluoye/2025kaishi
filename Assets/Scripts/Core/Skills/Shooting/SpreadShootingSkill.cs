@@ -39,7 +39,7 @@ namespace Core.Skills.Shooting
                 shooterComponent.Shoot(rotatedDirection);
             }
 
-            currentCooldown = cooldownTime;
+            currentCooldown = cooldownDuration;
         }
     }
 }

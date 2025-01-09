@@ -32,7 +32,7 @@ namespace Core.Skills.Shooting
             }
             
             burstCoroutine = StartCoroutine(ExecuteBurst(direction));
-            currentCooldown = cooldownTime;
+            currentCooldown = cooldownDuration;
         }
 
         private IEnumerator ExecuteBurst(Vector3 direction)

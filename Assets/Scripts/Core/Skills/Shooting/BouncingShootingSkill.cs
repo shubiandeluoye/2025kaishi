@@ -1,6 +1,7 @@
 using UnityEngine;
 using Core.Skills.Base;
 using Core.Combat.Unit.Base;
+using Core.Combat.Bullet.Base;
 
 namespace Core.Skills.Shooting
 {
@@ -23,22 +24,23 @@ namespace Core.Skills.Shooting
         {
             if (!IsReady || shooterComponent == null) return;
 
-            // Set bullet properties before shooting
-            var bullet = shooterComponent.GetBulletPrefab();
+            // 先射击，获取实例化的子弹
+            shooterComponent.Shoot(direction);
+            
+            // 在实例化的子弹上添加弹跳组件
+            var bullet = shooterComponent.GetLastFiredBullet();
             if (bullet != null)
             {
                 var bulletRb = bullet.GetComponent<Rigidbody>();
                 if (bulletRb != null)
                 {
                     bulletRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-                    // Add component to handle bouncing logic at runtime
                     var bounceHandler = bullet.AddComponent<BulletBounceHandler>();
                     bounceHandler.Initialize(maxBounces, bounceForce);
                 }
             }
 
-            shooterComponent.Shoot(direction);
-            currentCooldown = cooldownTime;
+            currentCooldown = cooldownDuration;
         }
     }
 

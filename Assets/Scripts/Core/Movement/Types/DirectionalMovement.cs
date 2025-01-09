@@ -26,6 +26,18 @@ namespace Core.Movement.Types
         private Vector3 rawInputDirection;
         private Vector3 lastValidDirection;
 
+        public float Speed
+        {
+            get => settings.maxSpeed;
+            set => settings.maxSpeed = value;
+        }
+
+        public float RotationSpeed
+        {
+            get => settings.rotationSpeed;
+            set => settings.rotationSpeed = value;
+        }
+
         protected override void Awake()
         {
             base.Awake();
@@ -33,6 +45,11 @@ namespace Core.Movement.Types
             {
                 orientationReference = Camera.main?.transform;
             }
+        }
+
+        public void Move(Vector2 direction)
+        {
+            SetInputDirection(direction);
         }
 
         /// <summary>
