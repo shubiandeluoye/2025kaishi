@@ -1,67 +1,78 @@
 using UnityEngine;
+using Core.Combat.Bullet;
+using Core.Level.Base;
 
-/// <summary>
-/// Handles the behavior of the rectangle shape in the middle section.
-/// Creates a 0.5x0.5 disappearance area and destroys after 30 seconds.
-/// Only interacts with level 1 and 2 bullets.
-/// </summary>
-public class RectangleShape : MonoBehaviour
+namespace Core.Interactive.MiddleShapes
 {
-    [Header("Configuration")]
-    [SerializeField] private float lifespan = 30f;
-    [SerializeField] private Vector3 disappearanceAreaSize = new Vector3(0.5f, 1f, 0.5f);
-    [SerializeField] private LayerMask bulletLayers;
-
-    private float timer = 0f;
-    private BoxCollider disappearanceArea;
-
-    private void Start()
+    /// <summary>
+    /// 矩形交互区域
+    /// 处理1-3级子弹的碰撞逻辑
+    /// </summary>
+    public class RectangleShape : MonoBehaviour
     {
-        // Create disappearance area as child object
-        var disappearanceObj = new GameObject("DisappearanceArea");
-        disappearanceObj.transform.SetParent(transform);
-        disappearanceObj.transform.localPosition = Vector3.zero;
-        disappearanceObj.transform.localRotation = Quaternion.identity;
-        disappearanceObj.transform.localScale = disappearanceAreaSize;
+        #region Properties
+        [SerializeField]
+        [Tooltip("碰撞特效预制体")]
+        protected GameObject collisionEffectPrefab;
 
-        // Add collider for bullet detection
-        disappearanceArea = disappearanceObj.AddComponent<BoxCollider>();
-        disappearanceArea.isTrigger = true;
-    }
+        [SerializeField]
+        [Tooltip("不同等级子弹的碰撞音效")]
+        protected AudioClip[] levelCollisionSounds;
+        #endregion
 
-    private void Update()
-    {
-        timer += Time.deltaTime;
-        if (timer >= lifespan)
+        #region Collision Handling
+        /// <summary>
+        /// 处理子弹进入触发区域的逻辑
+        /// 响应1-3级子弹
+        /// </summary>
+        private void OnTriggerEnter(Collider other)
         {
-            Destroy(gameObject);
+            var bullet = other.GetComponent<BaseBullet>();
+            if (bullet == null) return;
+
+            var bulletLevelSystem = bullet.GetComponent<BaseLevelSystem>();
+            if (bulletLevelSystem == null) return;
+
+            int bulletLevel = bulletLevelSystem.Level;
+            if (bulletLevel >= 1 && bulletLevel <= 3)
+            {
+                HandleBulletCollision(bullet, bulletLevel);
+            }
         }
-    }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!other.CompareTag("Bullet"))
-            return;
-
-        var bullet = other.GetComponent<BaseBullet>();
-        if (bullet == null || bullet.Level > 2)
-            return;
-
-        // Only destroy bullets that enter the disappearance area
-        if (other.bounds.Intersects(disappearanceArea.bounds))
+        /// <summary>
+        /// 处理子弹碰撞的具体逻辑
+        /// </summary>
+        protected virtual void HandleBulletCollision(BaseBullet bullet, int bulletLevel)
         {
-            Destroy(other.gameObject);
+            // 播放对应等级的碰撞效果
+            PlayCollisionEffects(bullet.transform.position, bulletLevel);
+            
+            // 销毁子弹
+            bullet.DestroyBullet();
         }
-    }
+        #endregion
 
-    private void OnDrawGizmos()
-    {
-        // Visualize disappearance area in editor
-        Gizmos.color = Color.yellow;
-        if (disappearanceArea != null)
+        #region Effects
+        /// <summary>
+        /// 播放碰撞特效和音效
+        /// </summary>
+        protected virtual void PlayCollisionEffects(Vector3 position, int bulletLevel)
         {
-            Gizmos.matrix = disappearanceArea.transform.localToWorldMatrix;
-            Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+            if (collisionEffectPrefab != null)
+            {
+                Instantiate(collisionEffectPrefab, position, Quaternion.identity);
+            }
+
+            if (levelCollisionSounds != null && bulletLevel <= levelCollisionSounds.Length)
+            {
+                var sound = levelCollisionSounds[bulletLevel - 1];
+                if (sound != null)
+                {
+                    AudioSource.PlayClipAtPoint(sound, position);
+                }
+            }
         }
+        #endregion
     }
 }

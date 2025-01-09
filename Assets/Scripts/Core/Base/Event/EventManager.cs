@@ -4,109 +4,113 @@ using UnityEngine;
 
 namespace Core.Base.Event
 {
+    /// <summary>
+    /// 静态事件管理器
+    /// 处理游戏中所有的事件通信
+    /// </summary>
     public static class EventManager
     {
-        private static Dictionary<Type, List<Delegate>> eventHandlers = new Dictionary<Type, List<Delegate>>();
-        private static Dictionary<string, List<Action<object>>> namedEventHandlers = new Dictionary<string, List<Action<object>>>();
-        private static Queue<EventData> eventQueue = new Queue<EventData>();
+        #region 内部结构
+        private static Dictionary<string, List<Delegate>> eventHandlers = new Dictionary<string, List<Delegate>>();
+        private static Queue<QueuedEventData> eventQueue = new Queue<QueuedEventData>();
         private static bool isProcessingQueue = false;
 
-        private class EventData
+        private class QueuedEventData
         {
-            public Type EventType { get; set; }
-            public object Data { get; set; }
-            public string EventName { get; set; }
+            public string EventName;
+            public object Data;
+        }
+        #endregion
+
+        #region 核心方法
+        /// <summary>
+        /// 订阅事件 - 泛型版本
+        /// </summary>
+        public static void Subscribe<T>(string eventName, Action<T> handler)
+        {
+            if (!eventHandlers.ContainsKey(eventName))
+            {
+                eventHandlers[eventName] = new List<Delegate>();
+            }
+            eventHandlers[eventName].Add(handler);
         }
 
-        public static void Subscribe<T>(Action<T> handler)
-        {
-            var type = typeof(T);
-            if (!eventHandlers.ContainsKey(type))
-                eventHandlers[type] = new List<Delegate>();
-            eventHandlers[type].Add(handler);
-        }
-
-        public static void Unsubscribe<T>(Action<T> handler)
-        {
-            var type = typeof(T);
-            if (eventHandlers.ContainsKey(type))
-                eventHandlers[type].Remove(handler);
-        }
-
+        /// <summary>
+        /// 订阅事件 - 非泛型版本
+        /// </summary>
         public static void Subscribe(string eventName, Action<object> handler)
         {
-            if (!namedEventHandlers.ContainsKey(eventName))
-                namedEventHandlers[eventName] = new List<Action<object>>();
-            namedEventHandlers[eventName].Add(handler);
+            if (!eventHandlers.ContainsKey(eventName))
+            {
+                eventHandlers[eventName] = new List<Delegate>();
+            }
+            eventHandlers[eventName].Add(handler);
         }
 
+        /// <summary>
+        /// 取消订阅事件 - 泛型版本
+        /// </summary>
+        public static void Unsubscribe<T>(string eventName, Action<T> handler)
+        {
+            if (eventHandlers.ContainsKey(eventName))
+            {
+                eventHandlers[eventName].Remove(handler);
+            }
+        }
+
+        /// <summary>
+        /// 取消订阅事件 - 非泛型版本
+        /// </summary>
         public static void Unsubscribe(string eventName, Action<object> handler)
         {
-            if (namedEventHandlers.ContainsKey(eventName))
-                namedEventHandlers[eventName].Remove(handler);
+            if (eventHandlers.ContainsKey(eventName))
+            {
+                eventHandlers[eventName].Remove(handler);
+            }
         }
 
-        public static void Publish<T>(T eventData, bool immediate = true)
+        /// <summary>
+        /// 发布事件
+        /// </summary>
+        public static void Publish<T>(string eventName, T data, bool immediate = true)
         {
             if (immediate)
-                PublishImmediate(eventData);
+            {
+                PublishImmediate(eventName, data);
+            }
             else
-                QueueEvent(eventData);
+            {
+                QueueEvent(eventName, data);
+            }
         }
 
-        public static void Publish(string eventName, object eventData = null, bool immediate = true)
+        private static void PublishImmediate<T>(string eventName, T data)
         {
-            if (immediate)
-                PublishNamedImmediate(eventName, eventData);
-            else
-                QueueNamedEvent(eventName, eventData);
-        }
+            if (!eventHandlers.ContainsKey(eventName)) return;
 
-        private static void PublishImmediate<T>(T eventData)
-        {
-            var type = typeof(T);
-            if (!eventHandlers.ContainsKey(type)) return;
-
-            foreach (var handler in eventHandlers[type].ToArray())
+            foreach (var handler in eventHandlers[eventName].ToArray())
             {
                 try
                 {
-                    if (handler is Action<T> action)
-                        action(eventData);
+                    if (handler is Action<T> typedHandler)
+                    {
+                        typedHandler(data);
+                    }
+                    else if (handler is Action<object> objectHandler)
+                    {
+                        objectHandler(data);
+                    }
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Error publishing event of type {type}: {e}");
+                    Debug.LogError($"Error publishing event {eventName}: {e}");
                 }
             }
         }
 
-        private static void PublishNamedImmediate(string eventName, object eventData)
+        private static void QueueEvent<T>(string eventName, T data)
         {
-            if (!namedEventHandlers.ContainsKey(eventName)) return;
-
-            foreach (var handler in namedEventHandlers[eventName].ToArray())
-            {
-                try
-                {
-                    handler(eventData);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Error publishing named event {eventName}: {e}");
-                }
-            }
-        }
-
-        private static void QueueEvent<T>(T eventData)
-        {
-            eventQueue.Enqueue(new EventData { EventType = typeof(T), Data = eventData });
-            ProcessEventQueue();
-        }
-
-        private static void QueueNamedEvent(string eventName, object eventData)
-        {
-            eventQueue.Enqueue(new EventData { EventName = eventName, Data = eventData });
+            eventQueue.Enqueue(new QueuedEventData { EventName = eventName, Data = data });
             ProcessEventQueue();
         }
 
@@ -118,21 +122,79 @@ namespace Core.Base.Event
             while (eventQueue.Count > 0)
             {
                 var eventData = eventQueue.Dequeue();
-                if (eventData.EventName != null)
-                    PublishNamedImmediate(eventData.EventName, eventData.Data);
-                else if (eventData.EventType != null)
-                    PublishImmediate(eventData.Data);
+                PublishImmediate(eventData.EventName, eventData.Data);
             }
 
             isProcessingQueue = false;
         }
 
+        /// <summary>
+        /// 清除所有事件
+        /// </summary>
         public static void ClearAllEvents()
         {
             eventHandlers.Clear();
-            namedEventHandlers.Clear();
             eventQueue.Clear();
             isProcessingQueue = false;
         }
+        #endregion
+
+        #region 事件名称常量
+        public static class EventNames
+        {
+            // 交互事件
+            public const string INTERACTION_START = "INTERACTION_START";
+            public const string INTERACTION_END = "INTERACTION_END";
+            public const string HIGHLIGHT_START = "HIGHLIGHT_START";
+            public const string HIGHLIGHT_END = "HIGHLIGHT_END";
+            
+            // 战斗事件
+            public const string BULLET_FIRED = "BULLET_FIRED";
+            public const string BULLET_HIT = "BULLET_HIT";
+            public const string BULLET_DESTROYED = "BULLET_DESTROYED";
+            
+            // 游戏状态事件
+            public const string GAME_PAUSED = "GAME_PAUSED";
+            public const string GAME_RESUMED = "GAME_RESUMED";
+            public const string LEVEL_STARTED = "LEVEL_STARTED";
+            public const string LEVEL_COMPLETED = "LEVEL_COMPLETED";
+        }
+        #endregion
+
+        #region 事件数据类型
+        public class InteractionEventData
+        {
+            public GameObject Interactor { get; set; }
+            public GameObject Target { get; set; }
+            public string InteractionType { get; set; }
+        }
+
+        public class BulletEventData
+        {
+            public Vector3 Position { get; set; }
+            public Vector3 Direction { get; set; }
+            public float Damage { get; set; }
+            public int Level { get; set; }
+            public Vector3[] PathPoints { get; set; }
+            public float Duration { get; set; }
+        }
+
+        public class ScreenEventData
+        {
+            public float ShakeDuration { get; set; }
+            public float ShakeIntensity { get; set; }
+            public bool UseLetterbox { get; set; }
+            public float LetterboxDuration { get; set; }
+            public AnimationCurve TransitionCurve { get; set; }
+        }
+
+        public class TimeEventData
+        {
+            public float SlowdownFactor { get; set; }
+            public float Duration { get; set; }
+            public bool Smooth { get; set; }
+        }
+        #endregion
     }
 }
+

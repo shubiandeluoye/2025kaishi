@@ -1,115 +1,150 @@
 using UnityEngine;
 using Core.Base.Event;
-using Core.Combat.Bullet.Base;
 
 namespace Core.Combat.Unit.Base
 {
     /// <summary>
-    /// Base class for all shooter behaviors
-    /// Provides core shooting functionality and bullet management
+    /// 射击单位的基类
+    /// 提供基础的射击功能和事件发布
     /// </summary>
-    public abstract class BaseShooter : MonoBehaviour
+    public class BaseShooter : MonoBehaviour
     {
-        [Header("Shooting Settings")]
-        [Tooltip("Shots per second")]
-        [SerializeField] protected float fireRate = 1f;
+        #region 字段和属性
+        [Header("Shooting Parameters")]
+        [Tooltip("每秒发射子弹的次数")]
+        [SerializeField] protected float fireRate = 0.5f;
         
-        [Tooltip("Initial bullet velocity")]
-        [SerializeField] protected float bulletSpeed = 10f;
+        [Tooltip("子弹飞行速度")]
+        [SerializeField] protected float bulletSpeed = 20f;
         
-        [Tooltip("Damage dealt by each bullet")]
+        [Tooltip("子弹伤害值")]
         [SerializeField] protected float bulletDamage = 10f;
         
-        [Tooltip("Bullet prefab to instantiate")]
-        [SerializeField] protected GameObject bulletPrefab;
+        [Tooltip("子弹等级（影响特效和伤害）")]
+        [SerializeField] protected int bulletLevel = 1;
 
-        /// <summary>
-        /// Time when the next shot can be fired
-        /// </summary>
-        protected float nextFireTime;
+        // 射击冷却计时器
+        protected float shootCooldown;
+        
+        // 是否可以射击
+        protected bool canShoot = true;
 
-        /// <summary>
-        /// Initialize shooting parameters
-        /// </summary>
-        protected virtual void Awake()
+        protected EventManager.BulletEventData lastFiredBullet;
+        #endregion
+
+        #region Unity生命周期
+        protected virtual void Update()
         {
-            nextFireTime = 0f;
-        }
-
-        /// <summary>
-        /// Check if the shooter can fire based on fire rate
-        /// </summary>
-        /// <returns>True if enough time has passed since last shot</returns>
-        public virtual bool CanShoot()
-        {
-            return Time.time >= nextFireTime;
-        }
-
-        /// <summary>
-        /// Get the bullet prefab with its BaseBullet component
-        /// </summary>
-        /// <returns>BaseBullet component of the bullet prefab</returns>
-        public virtual BaseBullet GetBulletPrefab()
-        {
-            return bulletPrefab?.GetComponent<BaseBullet>();
-        }
-
-        /// <summary>
-        /// Fire a bullet in the specified direction
-        /// </summary>
-        /// <param name="direction">Direction vector in world space</param>
-        public virtual void Shoot(Vector3 direction)
-        {
-            if (!CanShoot()) return;
-
-            // Update next fire time
-            nextFireTime = Time.time + (1f / fireRate);
-
-            // Create bullet
-            lastFiredBullet = Instantiate(bulletPrefab, transform.position, Quaternion.LookRotation(direction));
-            BaseBullet bulletComponent = lastFiredBullet.GetComponent<BaseBullet>();
-
-            if (bulletComponent != null)
+            // 更新射击冷却
+            if (shootCooldown > 0)
             {
-                bulletComponent.Initialize(direction * bulletSpeed, bulletDamage);
+                shootCooldown -= Time.deltaTime;
             }
+        }
+        #endregion
 
-            // Notify event system
-            EventManager.Publish(new ShootEvent(gameObject, lastFiredBullet));
+        #region 射击系统
+        /// <summary>
+        /// 检查是否可以射击
+        /// </summary>
+        protected virtual bool CanFire()
+        {
+            return canShoot && shootCooldown <= 0;
         }
 
-        protected GameObject lastFiredBullet;
+        /// <summary>
+        /// 执行射击 - 内部方法
+        /// </summary>
+        protected virtual void Fire(Vector3 direction)
+        {
+            if (!CanFire()) return;
 
-        public GameObject GetLastFiredBullet()
+            lastFiredBullet = new EventManager.BulletEventData
+            {
+                Position = transform.position,
+                Direction = direction.normalized,
+                Damage = bulletDamage,
+                Level = bulletLevel,
+                PathPoints = CalculateBulletPath(direction),
+                Duration = CalculateBulletDuration()
+            };
+
+            EventManager.Publish(EventManager.EventNames.BULLET_FIRED, lastFiredBullet);
+            shootCooldown = 1f / fireRate;
+        }
+
+        /// <summary>
+        /// 公共射击方法 - 供技能系统使用
+        /// </summary>
+        public virtual void Shoot(Vector3? direction = null)
+        {
+            Fire(direction ?? transform.forward);
+        }
+
+        /// <summary>
+        /// 获取最后发射的子弹数据
+        /// </summary>
+        public virtual EventManager.BulletEventData GetLastFiredBullet()
         {
             return lastFiredBullet;
         }
-    }
-
-    /// <summary>
-    /// Event data for shooting actions
-    /// </summary>
-    public class ShootEvent
-    {
-        /// <summary>
-        /// The GameObject that fired the shot
-        /// </summary>
-        public GameObject Shooter { get; private set; }
 
         /// <summary>
-        /// The bullet GameObject that was fired
+        /// 计算子弹路径点
         /// </summary>
-        public GameObject Bullet { get; private set; }
-
-        /// <summary>
-        /// Create a new shoot event
-        /// </summary>
-        /// <param name="shooter">The GameObject that fired the shot</param>
-        /// <param name="bullet">The bullet GameObject that was fired</param>
-        public ShootEvent(GameObject shooter, GameObject bullet)
+        protected virtual Vector3[] CalculateBulletPath(Vector3 direction)
         {
-            Shooter = shooter;
-            Bullet = bullet;
+            return new Vector3[] 
+            { 
+                transform.position,
+                transform.position + direction * bulletSpeed
+            };
         }
+
+        /// <summary>
+        /// 计算子弹飞行时间
+        /// </summary>
+        protected virtual float CalculateBulletDuration()
+        {
+            return bulletSpeed > 0 ? 1f / bulletSpeed : 0.5f;
+        }
+        #endregion
+
+        #region 公共方法
+        /// <summary>
+        /// 设置射击参数
+        /// </summary>
+        public virtual void SetShootingParameters(float rate, float speed, float damage, int level)
+        {
+            fireRate = rate;
+            bulletSpeed = speed;
+            bulletDamage = damage;
+            bulletLevel = level;
+        }
+
+        /// <summary>
+        /// 启用/禁用射击功能
+        /// </summary>
+        public virtual void SetCanShoot(bool enabled)
+        {
+            canShoot = enabled;
+        }
+
+        /// <summary>
+        /// 获取当前射击冷却时间
+        /// </summary>
+        public float GetShootCooldown()
+        {
+            return shootCooldown;
+        }
+
+        /// <summary>
+        /// 重置射击冷却
+        /// </summary>
+        public void ResetShootCooldown()
+        {
+            shootCooldown = 0f;
+        }
+        #endregion
     }
 }

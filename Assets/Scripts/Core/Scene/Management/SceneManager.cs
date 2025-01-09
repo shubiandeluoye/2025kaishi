@@ -1,94 +1,71 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Core.Base.Event;
+using Core.Base.Manager;
+using UnityEngine.SceneManagement;
 
 namespace Core.Scene.Management
 {
-    public class SceneManager : MonoBehaviour
+    public class SceneManager : BaseManager
     {
-        [Header("Scene Settings")]
-        [SerializeField] private float transitionDuration = 1f;
-        
-        private static SceneManager instance;
-        public static SceneManager Instance
+        [Header("Scene Loading")]
+        [SerializeField] private GameObject loadingScreen;
+        [SerializeField] private float minimumLoadTime = 0.5f;
+
+        protected override void RegisterEvents()
         {
-            get
+            EventManager.Subscribe<string>(EventManager.EventNames.LEVEL_STARTED, OnLevelStart);
+            EventManager.Subscribe<string>(EventManager.EventNames.LEVEL_COMPLETED, OnLevelComplete);
+        }
+
+        protected override void UnregisterEvents()
+        {
+            EventManager.Unsubscribe<string>(EventManager.EventNames.LEVEL_STARTED, OnLevelStart);
+            EventManager.Unsubscribe<string>(EventManager.EventNames.LEVEL_COMPLETED, OnLevelComplete);
+        }
+
+        private void OnLevelStart(string levelName)
+        {
+            StartCoroutine(LoadSceneRoutine(levelName));
+        }
+
+        private void OnLevelComplete(string nextLevel)
+        {
+            if (!string.IsNullOrEmpty(nextLevel))
             {
-                if (instance == null)
-                {
-                    instance = FindObjectOfType<SceneManager>();
-                    if (instance == null)
-                    {
-                        GameObject go = new GameObject("SceneManager");
-                        instance = go.AddComponent<SceneManager>();
-                    }
-                }
-                return instance;
+                EventManager.Publish(EventManager.EventNames.LEVEL_STARTED, nextLevel);
             }
         }
 
-        private void Awake()
+        private System.Collections.IEnumerator LoadSceneRoutine(string sceneName)
         {
-            if (instance == null)
+            if (loadingScreen != null)
+                loadingScreen.SetActive(true);
+
+            float startTime = Time.realtimeSinceStartup;
+
+            var operation = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
+            operation.allowSceneActivation = false;
+
+            while (operation.progress < 0.9f)
             {
-                instance = this;
-                DontDestroyOnLoad(gameObject);
+                yield return null;
             }
-            else
+
+            float elapsedTime = Time.realtimeSinceStartup - startTime;
+            if (elapsedTime < minimumLoadTime)
             {
-                Destroy(gameObject);
+                yield return new WaitForSeconds(minimumLoadTime - elapsedTime);
             }
+
+            operation.allowSceneActivation = true;
+
+            if (loadingScreen != null)
+                loadingScreen.SetActive(false);
         }
 
         public void LoadScene(string sceneName)
         {
-            StartCoroutine(LoadSceneAsync(sceneName));
-        }
-
-        private System.Collections.IEnumerator LoadSceneAsync(string sceneName)
-        {
-            // Trigger before scene load event
-            EventManager.Trigger(new SceneLoadEvent(SceneLoadState.Begin, sceneName));
-
-            // Start scene loading
-            AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
-            asyncLoad.allowSceneActivation = false;
-
-            while (asyncLoad.progress < 0.9f)
-            {
-                yield return null;
-            }
-
-            // Wait for transition duration
-            yield return new WaitForSeconds(transitionDuration);
-
-            // Complete scene loading
-            asyncLoad.allowSceneActivation = true;
-            while (!asyncLoad.isDone)
-            {
-                yield return null;
-            }
-
-            // Trigger after scene load event
-            EventManager.Trigger(new SceneLoadEvent(SceneLoadState.Complete, sceneName));
-        }
-    }
-
-    public enum SceneLoadState
-    {
-        Begin,
-        Complete
-    }
-
-    public class SceneLoadEvent
-    {
-        public SceneLoadState State { get; private set; }
-        public string SceneName { get; private set; }
-
-        public SceneLoadEvent(SceneLoadState state, string sceneName)
-        {
-            State = state;
-            SceneName = sceneName;
+            EventManager.Publish(EventManager.EventNames.LEVEL_STARTED, sceneName);
         }
     }
 }

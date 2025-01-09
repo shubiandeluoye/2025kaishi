@@ -1,92 +1,69 @@
 using UnityEngine;
-using Core.UI.Base;
 using Core.Base.Event;
-using TMPro;
+using Core.Base.Manager;
 
 namespace Core.UI.HUD
 {
-    public class HUDManager : BaseUIElement
+    public class HUDManager : BaseManager
     {
-        [Header("Player Score")]
-        [SerializeField] private TextMeshProUGUI player1ScoreText;
-        [SerializeField] private TextMeshProUGUI player2ScoreText;
+        [Header("UI References")]
+        [SerializeField] private GameObject interactionPrompt;
+        [SerializeField] private GameObject hitMarker;
+        [SerializeField] private GameObject damageIndicator;
 
-        [Header("Health Display")]
-        [SerializeField] private TextMeshProUGUI player1HealthText;
-        [SerializeField] private TextMeshProUGUI player2HealthText;
-
-        [Header("Ammo Counter")]
-        [SerializeField] private TextMeshProUGUI player1AmmoText;
-        [SerializeField] private TextMeshProUGUI player2AmmoText;
-
-        protected override void Awake()
+        protected override void RegisterEvents()
         {
-            base.Awake();
-            SubscribeToEvents();
+            EventManager.Subscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_START, OnInteractionStart);
+            EventManager.Subscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_END, OnInteractionEnd);
+            EventManager.Subscribe<EventManager.BulletEventData>(EventManager.EventNames.BULLET_HIT, OnBulletHit);
         }
 
-        private void SubscribeToEvents()
+        protected override void UnregisterEvents()
         {
-            EventManager.Subscribe<PlayerScoreUpdateEvent>(OnScoreUpdate);
-            EventManager.Subscribe<PlayerHealthUpdateEvent>(OnHealthUpdate);
-            EventManager.Subscribe<PlayerAmmoUpdateEvent>(OnAmmoUpdate);
+            EventManager.Unsubscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_START, OnInteractionStart);
+            EventManager.Unsubscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_END, OnInteractionEnd);
+            EventManager.Unsubscribe<EventManager.BulletEventData>(EventManager.EventNames.BULLET_HIT, OnBulletHit);
         }
 
-        private void OnScoreUpdate(PlayerScoreUpdateEvent evt)
+        private void OnInteractionStart(EventManager.InteractionEventData data)
         {
-            if (evt.PlayerId == 1)
-                player1ScoreText.text = $"Score: {evt.Score}";
-            else
-                player2ScoreText.text = $"Score: {evt.Score}";
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.SetActive(true);
+            }
         }
 
-        private void OnHealthUpdate(PlayerHealthUpdateEvent evt)
+        private void OnInteractionEnd(EventManager.InteractionEventData data)
         {
-            if (evt.PlayerId == 1)
-                player1HealthText.text = $"Health: {evt.Health}";
-            else
-                player2HealthText.text = $"Health: {evt.Health}";
+            if (interactionPrompt != null)
+            {
+                interactionPrompt.SetActive(false);
+            }
         }
 
-        private void OnAmmoUpdate(PlayerAmmoUpdateEvent evt)
+        private void OnBulletHit(EventManager.BulletEventData data)
         {
-            if (evt.PlayerId == 1)
-                player1AmmoText.text = $"Ammo: {evt.Ammo}";
-            else
-                player2AmmoText.text = $"Ammo: {evt.Ammo}";
-        }
-    }
+            if (hitMarker != null)
+            {
+                StartCoroutine(ShowHitMarker());
+            }
 
-    public class PlayerScoreUpdateEvent
-    {
-        public int PlayerId { get; private set; }
-        public int Score { get; private set; }
-        public PlayerScoreUpdateEvent(int playerId, int score)
-        {
-            PlayerId = playerId;
-            Score = score;
+            if (damageIndicator != null && data.Damage > 0)
+            {
+                ShowDamageIndicator(data.Damage);
+            }
         }
-    }
 
-    public class PlayerHealthUpdateEvent
-    {
-        public int PlayerId { get; private set; }
-        public float Health { get; private set; }
-        public PlayerHealthUpdateEvent(int playerId, float health)
+        private System.Collections.IEnumerator ShowHitMarker()
         {
-            PlayerId = playerId;
-            Health = health;
+            hitMarker.SetActive(true);
+            yield return new WaitForSeconds(0.1f);
+            hitMarker.SetActive(false);
         }
-    }
 
-    public class PlayerAmmoUpdateEvent
-    {
-        public int PlayerId { get; private set; }
-        public int Ammo { get; private set; }
-        public PlayerAmmoUpdateEvent(int playerId, int ammo)
+        private void ShowDamageIndicator(float damage)
         {
-            PlayerId = playerId;
-            Ammo = ammo;
+            // 实现伤害指示器的显示逻辑
         }
     }
 }

@@ -1,74 +1,126 @@
 using UnityEngine;
-using Core.Skills.Base;
+using Core.Base.Event;
 using Core.Combat.Unit.Base;
-using Core.Combat.Bullet.Base;
+using Core.Skills.Base;
 
 namespace Core.Skills.Shooting
 {
     /// <summary>
-    /// Implements a bouncing projectile shooting skill
+    /// 弹跳射击技能
+    /// 子弹可以在物体之间弹跳
     /// </summary>
     public class BouncingShootingSkill : BaseSkill
     {
-        [SerializeField] private BaseShooter shooterComponent;
+        [Header("Bouncing Settings")]
+        [Tooltip("最大弹跳次数")]
         [SerializeField] private int maxBounces = 3;
-        [SerializeField] private float bounceForce = 0.8f;
         
+        [Tooltip("每次弹跳后的伤害衰减")]
+        [SerializeField] private float damageDecay = 0.8f;
+        
+        [Tooltip("弹跳检测范围")]
+        [SerializeField] private float bounceRadius = 5f;
+        
+        [Tooltip("可弹跳的目标层级")]
+        [SerializeField] private LayerMask bounceTargetLayers;
+
+        private BaseShooter shooter;
+
         protected override void Awake()
         {
             base.Awake();
-            shooterComponent = GetComponent<BaseShooter>();
+            shooter = GetComponent<BaseShooter>();
+            if (shooter == null)
+            {
+                Debug.LogError("BouncingShootingSkill requires a BaseShooter component!");
+            }
         }
 
         public override void Execute(Vector3 direction)
         {
-            if (!IsReady || shooterComponent == null) return;
+            if (!IsReady || shooter == null) return;
 
-            // 先射击，获取实例化的子弹
-            shooterComponent.Shoot(direction);
-            
-            // 在实例化的子弹上添加弹跳组件
-            var bullet = shooterComponent.GetLastFiredBullet();
-            if (bullet != null)
+            // 发射初始子弹
+            shooter.Shoot(direction);
+
+            // 获取子弹数据
+            var bulletData = shooter.GetLastFiredBullet();
+            if (bulletData == null) return;
+
+            // 设置弹跳参数
+            var bounceData = new BounceData
             {
-                var bulletRb = bullet.GetComponent<Rigidbody>();
-                if (bulletRb != null)
+                CurrentBounces = 0,
+                MaxBounces = maxBounces,
+                CurrentDamage = bulletData.Damage,
+                DamageDecay = damageDecay
+            };
+
+            // 发布弹跳事件
+            EventManager.Publish(EventManager.EventNames.BULLET_FIRED, new EventManager.BulletEventData
+            {
+                Position = bulletData.Position,
+                Direction = direction,
+                Damage = bounceData.CurrentDamage,
+                Level = bulletData.Level,
+                PathPoints = CalculateBouncePath(bulletData.Position, direction, bounceData),
+                Duration = bulletData.Duration
+            });
+
+            // 开始冷却
+            StartCooldown();
+        }
+
+        private Vector3[] CalculateBouncePath(Vector3 startPos, Vector3 direction, BounceData bounceData)
+        {
+            var path = new System.Collections.Generic.List<Vector3>();
+            path.Add(startPos);
+
+            Vector3 currentPos = startPos;
+            Vector3 currentDir = direction;
+
+            while (bounceData.CurrentBounces < bounceData.MaxBounces)
+            {
+                // 检测可能的弹跳目标
+                var hits = Physics.SphereCastAll(currentPos, bounceRadius, currentDir, bounceRadius * 2, bounceTargetLayers);
+                if (hits.Length == 0) break;
+
+                // 找到最近的有效目标
+                float nearestDist = float.MaxValue;
+                Vector3? nextPos = null;
+                Vector3? nextDir = null;
+
+                foreach (var hit in hits)
                 {
-                    bulletRb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-                    var bounceHandler = bullet.AddComponent<BulletBounceHandler>();
-                    bounceHandler.Initialize(maxBounces, bounceForce);
+                    if (hit.distance < nearestDist)
+                    {
+                        nearestDist = hit.distance;
+                        nextPos = hit.point;
+                        nextDir = Vector3.Reflect(currentDir, hit.normal);
+                    }
                 }
+
+                if (!nextPos.HasValue) break;
+
+                // 添加弹跳点
+                path.Add(nextPos.Value);
+                
+                // 更新状态
+                currentPos = nextPos.Value;
+                currentDir = nextDir.Value;
+                bounceData.CurrentBounces++;
+                bounceData.CurrentDamage *= bounceData.DamageDecay;
             }
 
-            currentCooldown = cooldownDuration;
-        }
-    }
-
-    /// <summary>
-    /// Helper component to handle bullet bouncing behavior
-    /// </summary>
-    public class BulletBounceHandler : MonoBehaviour
-    {
-        private int remainingBounces;
-        private float bounceForce;
-
-        public void Initialize(int maxBounces, float force)
-        {
-            remainingBounces = maxBounces;
-            bounceForce = force;
+            return path.ToArray();
         }
 
-        private void OnCollisionEnter(Collision collision)
+        private class BounceData
         {
-            if (remainingBounces <= 0) return;
-
-            var rb = GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                Vector3 reflection = Vector3.Reflect(rb.velocity.normalized, collision.contacts[0].normal);
-                rb.velocity = reflection * (rb.velocity.magnitude * bounceForce);
-                remainingBounces--;
-            }
+            public int CurrentBounces;
+            public int MaxBounces;
+            public float CurrentDamage;
+            public float DamageDecay;
         }
     }
 }

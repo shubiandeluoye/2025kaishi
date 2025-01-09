@@ -1,77 +1,72 @@
 using UnityEngine;
+using Core.Combat.Bullet;
+using Core.Level.Base;
 
-/// <summary>
-/// Handles the behavior of the Level 2-3 transition shape in the middle section.
-/// Transforms bullets entering from bottom into two new angled bullets of higher level.
-/// Only interacts with level 1 and 2 bullets.
-/// </summary>
-public class Level2To3Shape : MonoBehaviour
+namespace Core.Interactive.MiddleShapes
 {
-    [Header("Configuration")]
-    [SerializeField] private float angleOffset = 30f; // Angle for new bullets
-    [SerializeField] private float spawnOffset = 0.2f; // Horizontal offset for spawned bullets
-    [SerializeField] private GameObject level2BulletPrefab;
-    [SerializeField] private GameObject level3BulletPrefab;
-    [SerializeField] private LayerMask bulletLayers;
-
-    private void OnTriggerEnter(Collider other)
+    /// <summary>
+    /// 2级到3级的转换区域
+    /// 将2级子弹升级为3级子弹
+    /// </summary>
+    public class Level2To3Shape : MonoBehaviour
     {
-        if (!other.CompareTag("Bullet"))
-            return;
+        #region Properties
+        [SerializeField]
+        [Tooltip("升级特效预制体")]
+        protected GameObject levelUpEffectPrefab;
 
-        var bullet = other.GetComponent<BaseBullet>();
-        if (bullet == null || bullet.Level > 2)
-            return;
+        [SerializeField]
+        [Tooltip("升级音效")]
+        protected AudioClip levelUpSound;
+        #endregion
 
-        // Check if bullet is entering from bottom
-        Vector3 bulletDirection = other.GetComponent<Rigidbody>().velocity.normalized;
-        float entryAngle = Vector3.Angle(Vector3.up, bulletDirection);
-        
-        if (entryAngle < 45f) // Consider it entering from bottom if angle is less than 45 degrees
+        #region Collision Handling
+        /// <summary>
+        /// 处理子弹进入触发区域的逻辑
+        /// 只响应2级子弹并尝试升级
+        /// </summary>
+        private void OnTriggerEnter(Collider other)
         {
-            // Determine which prefab to use based on current bullet level
-            GameObject newBulletPrefab = bullet.Level == 1 ? level2BulletPrefab : level3BulletPrefab;
+            var bullet = other.GetComponent<BaseBullet>();
+            if (bullet == null) return;
 
-            // Spawn two new bullets
-            SpawnAngledBullet(newBulletPrefab, -angleOffset, -spawnOffset);
-            SpawnAngledBullet(newBulletPrefab, angleOffset, spawnOffset);
+            var bulletLevelSystem = bullet.GetComponent<BaseLevelSystem>();
+            if (bulletLevelSystem == null) return;
 
-            // Destroy the original bullet
-            Destroy(other.gameObject);
+            if (bulletLevelSystem.Level == 2)
+            {
+                HandleLevelUpAttempt(bullet, bulletLevelSystem);
+            }
         }
-    }
 
-    private void SpawnAngledBullet(GameObject prefab, float angle, float horizontalOffset)
-    {
-        // Calculate spawn position with offset
-        Vector3 spawnPos = transform.position + new Vector3(horizontalOffset, 0f, 0f);
-
-        // Instantiate new bullet
-        GameObject newBullet = Instantiate(prefab, spawnPos, Quaternion.identity);
-        
-        // Calculate direction based on angle
-        Vector3 direction = Quaternion.Euler(0f, angle, 0f) * Vector3.up;
-        
-        // Set velocity for new bullet
-        var rb = newBullet.GetComponent<Rigidbody>();
-        if (rb != null)
+        /// <summary>
+        /// 处理子弹升级尝试
+        /// </summary>
+        protected virtual void HandleLevelUpAttempt(BaseBullet bullet, BaseLevelSystem levelSystem)
         {
-            rb.velocity = direction * 10f; // Use appropriate speed value
+            if (levelSystem.TryLevelUp())
+            {
+                PlayLevelUpEffects(bullet.transform.position);
+            }
         }
-    }
+        #endregion
 
-    private void OnDrawGizmos()
-    {
-        // Visualize spawn points and angles in editor
-        Gizmos.color = Color.green;
-        Vector3 leftSpawn = transform.position + new Vector3(-spawnOffset, 0f, 0f);
-        Vector3 rightSpawn = transform.position + new Vector3(spawnOffset, 0f, 0f);
-        
-        Gizmos.DrawWireSphere(leftSpawn, 0.1f);
-        Gizmos.DrawWireSphere(rightSpawn, 0.1f);
-        
-        // Draw angle indicators
-        Gizmos.DrawRay(leftSpawn, Quaternion.Euler(0f, -angleOffset, 0f) * Vector3.up);
-        Gizmos.DrawRay(rightSpawn, Quaternion.Euler(0f, angleOffset, 0f) * Vector3.up);
+        #region Effects
+        /// <summary>
+        /// 播放升级特效和音效
+        /// </summary>
+        protected virtual void PlayLevelUpEffects(Vector3 position)
+        {
+            if (levelUpEffectPrefab != null)
+            {
+                Instantiate(levelUpEffectPrefab, position, Quaternion.identity);
+            }
+
+            if (levelUpSound != null)
+            {
+                AudioSource.PlayClipAtPoint(levelUpSound, position);
+            }
+        }
+        #endregion
     }
 }

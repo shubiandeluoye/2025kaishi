@@ -159,6 +159,61 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""2D Vector"",
+                    ""id"": ""7d1528a0-0da8-499c-9c55-186b009d192f"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""f571873d-a800-423e-beff-a8be063d48ef"",
+                    ""path"": ""<Touchscreen>/delta/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""a5a624b2-ba57-4bc1-9ab2-a05772d23289"",
+                    ""path"": ""<Touchscreen>/delta/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""3ed1fb2e-f905-49e7-b6c3-ec4a857e8c52"",
+                    ""path"": ""<Touchscreen>/delta/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""481fdc59-d0f1-43a9-a5ba-e8d69dc7fe3b"",
+                    ""path"": ""<Touchscreen>/delta/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Move"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": """",
                     ""id"": ""4cd63ac3-75f2-48ec-984e-eb7a7f5e345a"",
                     ""path"": ""<Keyboard>/j"",
@@ -247,6 +302,33 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""TouchPress"",
+                    ""type"": ""Button"",
+                    ""id"": ""816be5b3-01ce-4574-82cc-7d0f44c3c66c"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""TouchDelta"",
+                    ""type"": ""Value"",
+                    ""id"": ""d0136fbf-8f1d-4897-bb45-30daf576715d"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""TouchPhase"",
+                    ""type"": ""Value"",
+                    ""id"": ""0712dc76-2d50-4c46-8396-73759f931627"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -271,6 +353,67 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""SecondaryFingerPosition"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4e3b2d04-eea6-45bb-9790-fd76204510cc"",
+                    ""path"": ""<Touchscreen>/Press"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TouchPress"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bcf1226d-3032-43b8-b219-6e9167a02b19"",
+                    ""path"": ""<Touchscreen>/delta"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TouchDelta"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""23d722b7-5fe0-427a-98f8-634f854eb98b"",
+                    ""path"": ""<Touchscreen>/primaryTouch/phase"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TouchPhase"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""Mobile"",
+            ""id"": ""433fb8ae-3f0e-442a-b698-42439b220e55"",
+            ""actions"": [
+                {
+                    ""name"": ""New action"",
+                    ""type"": ""Value"",
+                    ""id"": ""5ae34226-e6d2-48de-bf9f-540fbca524f9"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""30599e40-555d-497c-9adb-01fb1d9359fc"",
+                    ""path"": """",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""New action"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -290,12 +433,19 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
         m_Touch = asset.FindActionMap("Touch", throwIfNotFound: true);
         m_Touch_PrimaryFingerPosition = m_Touch.FindAction("PrimaryFingerPosition", throwIfNotFound: true);
         m_Touch_SecondaryFingerPosition = m_Touch.FindAction("SecondaryFingerPosition", throwIfNotFound: true);
+        m_Touch_TouchPress = m_Touch.FindAction("TouchPress", throwIfNotFound: true);
+        m_Touch_TouchDelta = m_Touch.FindAction("TouchDelta", throwIfNotFound: true);
+        m_Touch_TouchPhase = m_Touch.FindAction("TouchPhase", throwIfNotFound: true);
+        // Mobile
+        m_Mobile = asset.FindActionMap("Mobile", throwIfNotFound: true);
+        m_Mobile_Newaction = m_Mobile.FindAction("New action", throwIfNotFound: true);
     }
 
     ~@GameInputActions()
     {
         UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, GameInputActions.Player.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Touch.enabled, "This will cause a leak and performance issues, GameInputActions.Touch.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Mobile.enabled, "This will cause a leak and performance issues, GameInputActions.Mobile.Disable() has not been called.");
     }
 
     public void Dispose()
@@ -453,12 +603,18 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
     private List<ITouchActions> m_TouchActionsCallbackInterfaces = new List<ITouchActions>();
     private readonly InputAction m_Touch_PrimaryFingerPosition;
     private readonly InputAction m_Touch_SecondaryFingerPosition;
+    private readonly InputAction m_Touch_TouchPress;
+    private readonly InputAction m_Touch_TouchDelta;
+    private readonly InputAction m_Touch_TouchPhase;
     public struct TouchActions
     {
         private @GameInputActions m_Wrapper;
         public TouchActions(@GameInputActions wrapper) { m_Wrapper = wrapper; }
         public InputAction @PrimaryFingerPosition => m_Wrapper.m_Touch_PrimaryFingerPosition;
         public InputAction @SecondaryFingerPosition => m_Wrapper.m_Touch_SecondaryFingerPosition;
+        public InputAction @TouchPress => m_Wrapper.m_Touch_TouchPress;
+        public InputAction @TouchDelta => m_Wrapper.m_Touch_TouchDelta;
+        public InputAction @TouchPhase => m_Wrapper.m_Touch_TouchPhase;
         public InputActionMap Get() { return m_Wrapper.m_Touch; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -474,6 +630,15 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
             @SecondaryFingerPosition.started += instance.OnSecondaryFingerPosition;
             @SecondaryFingerPosition.performed += instance.OnSecondaryFingerPosition;
             @SecondaryFingerPosition.canceled += instance.OnSecondaryFingerPosition;
+            @TouchPress.started += instance.OnTouchPress;
+            @TouchPress.performed += instance.OnTouchPress;
+            @TouchPress.canceled += instance.OnTouchPress;
+            @TouchDelta.started += instance.OnTouchDelta;
+            @TouchDelta.performed += instance.OnTouchDelta;
+            @TouchDelta.canceled += instance.OnTouchDelta;
+            @TouchPhase.started += instance.OnTouchPhase;
+            @TouchPhase.performed += instance.OnTouchPhase;
+            @TouchPhase.canceled += instance.OnTouchPhase;
         }
 
         private void UnregisterCallbacks(ITouchActions instance)
@@ -484,6 +649,15 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
             @SecondaryFingerPosition.started -= instance.OnSecondaryFingerPosition;
             @SecondaryFingerPosition.performed -= instance.OnSecondaryFingerPosition;
             @SecondaryFingerPosition.canceled -= instance.OnSecondaryFingerPosition;
+            @TouchPress.started -= instance.OnTouchPress;
+            @TouchPress.performed -= instance.OnTouchPress;
+            @TouchPress.canceled -= instance.OnTouchPress;
+            @TouchDelta.started -= instance.OnTouchDelta;
+            @TouchDelta.performed -= instance.OnTouchDelta;
+            @TouchDelta.canceled -= instance.OnTouchDelta;
+            @TouchPhase.started -= instance.OnTouchPhase;
+            @TouchPhase.performed -= instance.OnTouchPhase;
+            @TouchPhase.canceled -= instance.OnTouchPhase;
         }
 
         public void RemoveCallbacks(ITouchActions instance)
@@ -501,6 +675,52 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
         }
     }
     public TouchActions @Touch => new TouchActions(this);
+
+    // Mobile
+    private readonly InputActionMap m_Mobile;
+    private List<IMobileActions> m_MobileActionsCallbackInterfaces = new List<IMobileActions>();
+    private readonly InputAction m_Mobile_Newaction;
+    public struct MobileActions
+    {
+        private @GameInputActions m_Wrapper;
+        public MobileActions(@GameInputActions wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Newaction => m_Wrapper.m_Mobile_Newaction;
+        public InputActionMap Get() { return m_Wrapper.m_Mobile; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(MobileActions set) { return set.Get(); }
+        public void AddCallbacks(IMobileActions instance)
+        {
+            if (instance == null || m_Wrapper.m_MobileActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_MobileActionsCallbackInterfaces.Add(instance);
+            @Newaction.started += instance.OnNewaction;
+            @Newaction.performed += instance.OnNewaction;
+            @Newaction.canceled += instance.OnNewaction;
+        }
+
+        private void UnregisterCallbacks(IMobileActions instance)
+        {
+            @Newaction.started -= instance.OnNewaction;
+            @Newaction.performed -= instance.OnNewaction;
+            @Newaction.canceled -= instance.OnNewaction;
+        }
+
+        public void RemoveCallbacks(IMobileActions instance)
+        {
+            if (m_Wrapper.m_MobileActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IMobileActions instance)
+        {
+            foreach (var item in m_Wrapper.m_MobileActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_MobileActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public MobileActions @Mobile => new MobileActions(this);
     public interface IPlayerActions
     {
         void OnMove(InputAction.CallbackContext context);
@@ -515,5 +735,12 @@ public partial class @GameInputActions: IInputActionCollection2, IDisposable
     {
         void OnPrimaryFingerPosition(InputAction.CallbackContext context);
         void OnSecondaryFingerPosition(InputAction.CallbackContext context);
+        void OnTouchPress(InputAction.CallbackContext context);
+        void OnTouchDelta(InputAction.CallbackContext context);
+        void OnTouchPhase(InputAction.CallbackContext context);
+    }
+    public interface IMobileActions
+    {
+        void OnNewaction(InputAction.CallbackContext context);
     }
 }
