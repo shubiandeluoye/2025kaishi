@@ -13,8 +13,8 @@ namespace Core.Managers
 
         protected override void RegisterEvents()
         {
-            EventManager.Subscribe<EventManager.BulletEventData>(EventManager.EventNames.BULLET_FIRED, OnBulletFired);
-            EventManager.Subscribe<EventManager.BulletEventData>(EventManager.EventNames.BULLET_HIT, OnBulletHit);
+            EventManager.Subscribe<BulletEventData>(EventNames.BULLET_FIRED, OnBulletFired);
+            EventManager.Subscribe<BulletEventData>(EventNames.BULLET_HIT, OnBulletHit);
         }
 
         protected override void UnregisterEvents()

@@ -27,8 +27,8 @@ namespace Core.Managers
 
         protected override void RegisterEvents()
         {
-            EventManager.Subscribe<EventManager.ScreenEventData>(EventManager.EventNames.HIGHLIGHT_START, OnScreenShake);
-            EventManager.Subscribe<EventManager.ScreenEventData>(EventManager.EventNames.BULLET_HIT, OnBulletImpact);
+            EventManager.Subscribe<ScreenEventData>(EventNames.HIGHLIGHT_START, OnScreenShake);
+            EventManager.Subscribe<ScreenEventData>(EventNames.BULLET_HIT, OnBulletImpact);
         }
 
         protected override void UnregisterEvents()

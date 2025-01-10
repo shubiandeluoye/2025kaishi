@@ -1,93 +1,55 @@
 using UnityEngine;
-using System;
+using Core.Base.Event;
 using Core.Level.Data;
 using Core.Level.Interface;
 
 namespace Core.Level.Events
 {
-    public static class LevelEvents
+    public class LevelUpEvent
     {
-        // 全局等级事件
-        public static event Action<ILevelable, int> OnAnyLevelUp;
-        public static event Action<ILevelable, int> OnAnyPrestige;
-        public static event Action<ILevelable, float> OnAnyExperienceGained;
-        
-        // 特定类型的等级事件
-        public static event Action<ILevelable, LevelData.UnlockableContent[]> OnContentUnlocked;
-        public static event Action<ILevelable, LevelData.LevelRequirement> OnRequirementsMet;
-        public static event Action<ILevelable, string> OnLevelError;
+        public ILevelable Source { get; private set; }
+        public int NewLevel { get; private set; }
 
-        public static void TriggerLevelUp(ILevelable source, int newLevel)
+        public LevelUpEvent(ILevelable source, int newLevel)
         {
-            try
-            {
-                OnAnyLevelUp?.Invoke(source, newLevel);
-                Debug.Log($"Entity leveled up to {newLevel}");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error in level up event: {e.Message}");
-                OnLevelError?.Invoke(source, e.Message);
-            }
+            Source = source;
+            NewLevel = newLevel;
         }
+    }
 
-        public static void TriggerPrestige(ILevelable source, int prestigeLevel)
+    public class PrestigeEvent
+    {
+        public ILevelable Source { get; private set; }
+        public int PrestigeLevel { get; private set; }
+
+        public PrestigeEvent(ILevelable source, int prestigeLevel)
         {
-            try
-            {
-                OnAnyPrestige?.Invoke(source, prestigeLevel);
-                Debug.Log($"Entity reached prestige level {prestigeLevel}");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error in prestige event: {e.Message}");
-                OnLevelError?.Invoke(source, e.Message);
-            }
+            Source = source;
+            PrestigeLevel = prestigeLevel;
         }
+    }
 
-        public static void TriggerExperienceGained(ILevelable source, float amount)
+    public class ExperienceGainEvent
+    {
+        public ILevelable Source { get; private set; }
+        public float Amount { get; private set; }
+
+        public ExperienceGainEvent(ILevelable source, float amount)
         {
-            try
-            {
-                OnAnyExperienceGained?.Invoke(source, amount);
-                Debug.Log($"Entity gained {amount} experience");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error in experience gain event: {e.Message}");
-                OnLevelError?.Invoke(source, e.Message);
-            }
+            Source = source;
+            Amount = amount;
         }
+    }
 
-        public static void TriggerContentUnlocked(ILevelable source, LevelData.UnlockableContent[] content)
-        {
-            try
-            {
-                OnContentUnlocked?.Invoke(source, content);
-                foreach (var item in content)
-                {
-                    Debug.Log($"Unlocked content: {item.contentType} - {item.contentId}");
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error in content unlock event: {e.Message}");
-                OnLevelError?.Invoke(source, e.Message);
-            }
-        }
+    public class ContentUnlockEvent
+    {
+        public ILevelable Source { get; private set; }
+        public LevelData.UnlockableContent[] Content { get; private set; }
 
-        public static void TriggerRequirementsMet(ILevelable source, LevelData.LevelRequirement requirement)
+        public ContentUnlockEvent(ILevelable source, LevelData.UnlockableContent[] content)
         {
-            try
-            {
-                OnRequirementsMet?.Invoke(source, requirement);
-                Debug.Log($"Level requirements met for level {requirement.level}");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error in requirements met event: {e.Message}");
-                OnLevelError?.Invoke(source, e.Message);
-            }
+            Source = source;
+            Content = content;
         }
     }
 } 

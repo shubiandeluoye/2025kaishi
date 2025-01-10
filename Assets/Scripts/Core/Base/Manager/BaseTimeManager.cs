@@ -24,6 +24,29 @@ namespace Core.Base.Manager
             Time.timeScale = currentTimeScale;
         }
 
+        protected override void RegisterEvents()
+        {
+            EventManager.Subscribe<float>(EventNames.TIME_SCALE_CHANGE, OnTimeScaleChange);
+            EventManager.Subscribe<object>(EventNames.TOGGLE_PAUSE, OnTogglePause);
+        }
+
+        protected override void UnregisterEvents()
+        {
+            EventManager.Unsubscribe<float>(EventNames.TIME_SCALE_CHANGE, OnTimeScaleChange);
+            EventManager.Unsubscribe<object>(EventNames.TOGGLE_PAUSE, OnTogglePause);
+        }
+
+        private void OnTimeScaleChange(float newTimeScale)
+        {
+            SetTimeScale(newTimeScale);
+            EventManager.Publish("TIME_SCALE_CHANGED", Time.timeScale);
+        }
+
+        private void OnTogglePause(object data)
+        {
+            TogglePause();
+        }
+
         /// <summary>
         /// 设置时间缩放
         /// </summary>
@@ -34,7 +57,11 @@ namespace Core.Base.Manager
             if (smooth)
                 StartCoroutine(SmoothTimeScale(scale, duration));
             else
+            {
                 Time.timeScale = scale;
+                EventManager.Publish(EventNames.TIME_SCALE_CHANGED, 
+                    new TimeEventData { SlowdownFactor = scale, Duration = 0, Smooth = false });
+            }
             
             currentTimeScale = scale;
         }
@@ -53,6 +80,8 @@ namespace Core.Base.Manager
             }
 
             Time.timeScale = targetScale;
+            EventManager.Publish(EventNames.TIME_SCALE_CHANGED, 
+                new TimeEventData { SlowdownFactor = targetScale, Duration = duration, Smooth = true });
         }
 
         /// <summary>
@@ -64,12 +93,14 @@ namespace Core.Base.Manager
             {
                 Time.timeScale = currentTimeScale;
                 isPaused = false;
+                EventManager.Publish(EventNames.GAME_RESUMED, null);
             }
             else
             {
                 currentTimeScale = Time.timeScale;
                 Time.timeScale = 0f;
                 isPaused = true;
+                EventManager.Publish(EventNames.GAME_PAUSED, null);
             }
         }
     }

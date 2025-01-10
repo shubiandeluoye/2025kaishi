@@ -30,12 +30,14 @@ namespace Core.UI.Base
                 Initialize();
             
             gameObject.SetActive(true);
+            EventManager.Publish(EventNames.UI_SHOW, new UIShowEvent(gameObject.name));
             onShow?.Invoke();
         }
 
         public virtual void Hide()
         {
             gameObject.SetActive(false);
+            EventManager.Publish(EventNames.UI_HIDE, new UIHideEvent(gameObject.name));
             onHide?.Invoke();
 
             if (!keepAlive)
@@ -83,5 +85,25 @@ namespace Core.UI.Base
         // State management (for future use)
         public virtual void SaveState() { }
         public virtual void RestoreState() { }
+
+        #region UI Events
+        protected virtual void OnUIClick(Vector2 position) { }
+        protected virtual void OnUIDrag(Vector2 position, Vector2 delta) { }
+        protected virtual void OnUIScroll(float value) { }
+        protected virtual void OnUIHover(bool isHovering) { }
+        protected virtual void OnUIFocus(bool isFocused) { }
+        #endregion
+
+        #region Animation Events
+        public virtual void OnAnimationStart() { }
+        public virtual void OnAnimationComplete() { }
+        #endregion
+
+        #region Transition Events
+        public virtual void OnTransitionInStart() { }
+        public virtual void OnTransitionInComplete() { }
+        public virtual void OnTransitionOutStart() { }
+        public virtual void OnTransitionOutComplete() { }
+        #endregion
     }
 } 

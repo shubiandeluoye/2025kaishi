@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Core.Base.Event;
 using Core.Level.Data;
 using Core.Level.Events;
 using Core.Level.Interface;
@@ -40,6 +41,8 @@ namespace Core.Level.Base
                 if (currentLevel != oldLevel)
                 {
                     OnLevelUp?.Invoke(currentLevel);
+                    EventManager.Publish(EventNames.LEVEL_UP, 
+                        new LevelUpEvent(this, currentLevel));
                 }
             }
         }
@@ -84,6 +87,8 @@ namespace Core.Level.Base
         {
             currentExperience += amount;
             OnExperienceGained?.Invoke(amount);
+            EventManager.Publish(EventNames.EXPERIENCE_GAINED, 
+                new ExperienceGainEvent(this, amount));
 
             while (currentExperience >= ExperienceToNextLevel && CanLevelUp())
             {
@@ -106,6 +111,8 @@ namespace Core.Level.Base
                 currentPrestige++;
                 ResetLevel();
                 OnPrestige?.Invoke(currentPrestige);
+                EventManager.Publish(EventNames.PRESTIGE_LEVEL_UP, 
+                    new PrestigeEvent(this, currentPrestige));
                 return true;
             }
             return false;
@@ -137,5 +144,25 @@ namespace Core.Level.Base
             currentExperience = 0;
         }
         #endregion
+
+        protected virtual void OnEnable()
+        {
+            RegisterEvents();
+        }
+
+        protected virtual void OnDisable()
+        {
+            UnregisterEvents();
+        }
+
+        protected virtual void RegisterEvents()
+        {
+            // 如果需要监听其他事件，在这里注册
+        }
+
+        protected virtual void UnregisterEvents()
+        {
+            // 如果需要取消监听其他事件，在这里取消注册
+        }
     }
 } 

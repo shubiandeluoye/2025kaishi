@@ -1,6 +1,8 @@
 using UnityEngine;
 using Core.Combat.Unit.Base;
 using Core.Skills;
+using Core.Base.Event;
+using Core.Combat.ShootPoint;
 
 namespace Core.Combat.Unit.Player
 {
@@ -13,17 +15,13 @@ namespace Core.Combat.Unit.Player
         #region Components
         private BaseShooter shooter;
         private SkillManager skillManager;
+        [SerializeField] private ShootPointSystem shootPointSystem;
         #endregion
 
-        #region Input Settings
+        #region Settings
         [Header("Input Settings")]
-        [Tooltip("鼠标/触摸灵敏度")]
         [SerializeField] private float inputSensitivity = 2f;
-        
-        [Tooltip("是否反转Y轴")]
         [SerializeField] private bool invertY = false;
-
-        [Tooltip("移动端虚拟摇杆死区")]
         [SerializeField] private float joystickDeadZone = 0.1f;
         #endregion
 
@@ -31,16 +29,7 @@ namespace Core.Combat.Unit.Player
         private Vector2 lastTouchPosition;
         private bool isTouching;
         private Vector2 moveInput;
-        #endregion
-
-        #region Platform Detection
-        private bool IsMobilePlatform
-        {
-            get
-            {
-                return Application.isMobilePlatform;
-            }
-        }
+        private int currentSkillIndex = 0;
         #endregion
 
         #region Initialization
@@ -50,157 +39,93 @@ namespace Core.Combat.Unit.Player
             skillManager = GetComponent<SkillManager>();
 
             if (shooter == null)
-            {
                 Debug.LogError("PlayerController requires a BaseShooter component!");
-            }
 
             if (skillManager == null)
-            {
                 Debug.LogError("PlayerController requires a SkillManager component!");
-            }
+
+            SubscribeToEvents();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromEvents();
         }
         #endregion
 
-        #region Update Loop
-        private void Update()
+        #region Event Handling
+        private void SubscribeToEvents()
         {
-            if (IsMobilePlatform)
-            {
-                HandleMobileInput();
-            }
-            else
-            {
-                HandlePCInput();
-            }
-        }
-        #endregion
-
-        #region PC Input Handling
-        /// <summary>
-        /// 处理PC端输入（鼠标和键盘）
-        /// </summary>
-        private void HandlePCInput()
-        {
-            HandleMouseInput();
-            HandleKeyboardSkillInput();
+            EventManager.Subscribe<Vector2>(EventNames.PLAYER_MOVE, OnPlayerMove);
+            EventManager.Subscribe<ShootType>(EventNames.PLAYER_SHOOT, OnPlayerShoot);
+            EventManager.Subscribe<Vector2, TouchEventType>(EventNames.TOUCH_INPUT, OnTouchInput);
+            EventManager.Subscribe<int, int>(EventNames.SKILL_LEVEL_UP, OnSkillLevelChange);
+            EventManager.Subscribe<float>(EventNames.ANGLE_TOGGLE, OnAngleToggle);
         }
 
-        private void HandleMouseInput()
+        private void UnsubscribeFromEvents()
         {
-            Vector3 mousePosition = Input.mousePosition;
-            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(new Vector3(mousePosition.x, mousePosition.y, 10f));
-            Vector3 direction = (worldPosition - transform.position).normalized;
+            EventManager.Unsubscribe<Vector2>(EventNames.PLAYER_MOVE, OnPlayerMove);
+            EventManager.Unsubscribe<ShootType>(EventNames.PLAYER_SHOOT, OnPlayerShoot);
+            EventManager.Unsubscribe<Vector2, TouchEventType>(EventNames.TOUCH_INPUT, OnTouchInput);
+            EventManager.Unsubscribe<int, int>(EventNames.SKILL_LEVEL_UP, OnSkillLevelChange);
+            EventManager.Unsubscribe<float>(EventNames.ANGLE_TOGGLE, OnAngleToggle);
+        }
 
-            // 更新朝向
-            transform.right = direction;
-
-            // 基础射击 - 左键
-            if (Input.GetMouseButton(0) && skillManager.IsSkillReady(0))
+        private void OnPlayerMove(Vector2 moveDirection)
+        {
+            if (moveDirection.magnitude > joystickDeadZone)
             {
-                skillManager.ExecuteSkill(0, direction);
+                moveInput = moveDirection;
+                Vector3 moveDirection3D = new Vector3(moveInput.x, moveInput.y, 0f);
+                transform.position += moveDirection3D * inputSensitivity * Time.deltaTime;
             }
         }
 
-        private void HandleKeyboardSkillInput()
+        private void OnPlayerShoot(ShootType type)
         {
             Vector3 direction = transform.right;
-
-            // 散射 - 右键
-            if (Input.GetMouseButton(1) && skillManager.IsSkillReady(1))
+            switch (type)
             {
-                skillManager.ExecuteSkill(1, direction);
+                case ShootType.Straight:
+                    if (skillManager.IsSkillReady(0))
+                        skillManager.ExecuteSkill(0, direction);
+                    break;
+                case ShootType.LeftAngle:
+                    if (skillManager.IsSkillReady(1))
+                        skillManager.ExecuteSkill(1, direction);
+                    break;
+                case ShootType.RightAngle:
+                    if (skillManager.IsSkillReady(2))
+                        skillManager.ExecuteSkill(2, direction);
+                    break;
+                case ShootType.Level3:
+                    if (skillManager.IsSkillReady(3))
+                        skillManager.ExecuteSkill(3, direction);
+                    break;
             }
+        }
 
-            // 连发 - Q键
-            if (Input.GetKey(KeyCode.Q) && skillManager.IsSkillReady(2))
+        private void OnTouchInput(Vector2 position, TouchEventType type)
+        {
+            switch (type)
             {
-                skillManager.ExecuteSkill(2, direction);
+                case TouchEventType.Move:
+                    HandleMovement(position);
+                    break;
+                case TouchEventType.Attack:
+                    HandleAttack(position);
+                    break;
+                case TouchEventType.SkillAim:
+                    HandleSkillAim(position);
+                    break;
+                case TouchEventType.SkillTrigger:
+                    HandleSkillTrigger(position);
+                    break;
             }
-
-            // 弹跳射击 - E键
-            if (Input.GetKey(KeyCode.E) && skillManager.IsSkillReady(3))
-            {
-                skillManager.ExecuteSkill(3, direction);
-            }
-        }
-        #endregion
-
-        #region Mobile Input Handling
-        /// <summary>
-        /// 处理移动端输入（触摸）
-        /// </summary>
-        private void HandleMobileInput()
-        {
-            // 处理触摸输入
-            if (Input.touchCount > 0)
-            {
-                Touch touch = Input.GetTouch(0);
-
-                switch (touch.phase)
-                {
-                    case TouchPhase.Began:
-                        HandleTouchBegan(touch);
-                        break;
-                    case TouchPhase.Moved:
-                        HandleTouchMoved(touch);
-                        break;
-                    case TouchPhase.Ended:
-                    case TouchPhase.Canceled:
-                        HandleTouchEnded();
-                        break;
-                }
-            }
-
-            // 处理虚拟按钮输入（需要UI系统支持）
-            HandleVirtualButtons();
         }
 
-        private void HandleTouchBegan(Touch touch)
-        {
-            isTouching = true;
-            lastTouchPosition = touch.position;
-        }
-
-        private void HandleTouchMoved(Touch touch)
-        {
-            if (!isTouching) return;
-
-            // 计算触摸移动方向
-            Vector2 touchDelta = touch.position - lastTouchPosition;
-            Vector3 worldDirection = Camera.main.ScreenToWorldPoint(new Vector3(touch.position.x, touch.position.y, 10f)) - transform.position;
-            worldDirection.Normalize();
-
-            // 更新朝向
-            transform.right = worldDirection;
-
-            // 如果移动距离超过阈值，视为有效输入
-            if (touchDelta.magnitude > joystickDeadZone)
-            {
-                moveInput = touchDelta.normalized;
-            }
-
-            lastTouchPosition = touch.position;
-        }
-
-        private void HandleTouchEnded()
-        {
-            isTouching = false;
-            moveInput = Vector2.zero;
-        }
-
-        private void HandleVirtualButtons()
-        {
-            // 这里需要配合UI系统实现虚拟按钮
-            // 示例：通过UI按钮触发技能
-            // 实际实现时需要添加UI按钮并绑定这些方法
-        }
-        #endregion
-
-        #region Public Methods
-        /// <summary>
-        /// 触发技能（供UI按钮调用）
-        /// </summary>
-        public void TriggerSkill(int skillIndex)
+        private void OnSkillLevelChange(int skillIndex, int level)
         {
             if (skillManager.IsSkillReady(skillIndex))
             {
@@ -208,22 +133,80 @@ namespace Core.Combat.Unit.Player
             }
         }
 
-        /// <summary>
-        /// 设置输入灵敏度
-        /// </summary>
+        private void OnAngleToggle(float angle)
+        {
+            // 处理角度切换
+            // 可以在这里添加角度切换的视觉反馈
+        }
+        #endregion
+
+        #region Public Methods
         public void SetInputSensitivity(float sensitivity)
         {
             inputSensitivity = Mathf.Max(0.1f, sensitivity);
         }
 
-        /// <summary>
-        /// 设置Y轴是否反转
-        /// </summary>
         public void SetInvertY(bool invert)
         {
             invertY = invert;
         }
+
+        public void SetCurrentSkill(int skillIndex)
+        {
+            currentSkillIndex = skillIndex;
+        }
         #endregion
+
+        #region Private Methods
+        private void HandleMovement(Vector2 position)
+        {
+            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(position.x, position.y, 10f));
+            Vector3 direction = (worldPos - transform.position).normalized;
+            
+            EventManager.Publish(EventNames.SHOOT_POINT_UPDATE, direction);
+        }
+
+        private void HandleAttack(Vector2 position)
+        {
+            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(position.x, position.y, 10f));
+            Vector3 direction = (worldPos - transform.position).normalized;
+            
+            EventManager.Publish(EventNames.SHOOT_POINT_UPDATE, direction);
+            EventManager.Publish(EventNames.SKILL_CAST_START, new SkillCastData(0, direction));
+        }
+
+        private void HandleSkillAim(Vector2 position)
+        {
+            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(position.x, position.y, 10f));
+            Vector3 direction = (worldPos - transform.position).normalized;
+            
+            EventManager.Publish(EventNames.SHOOT_POINT_UPDATE, direction);
+        }
+
+        private void HandleSkillTrigger(Vector2 position)
+        {
+            if (currentSkillIndex > 0)
+            {
+                Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(position.x, position.y, 10f));
+                Vector3 direction = (worldPos - transform.position).normalized;
+                
+                EventManager.Publish(EventNames.SKILL_CAST_START, 
+                    new SkillCastData(currentSkillIndex, direction));
+            }
+        }
+        #endregion
+    }
+
+    public struct SkillCastData
+    {
+        public int SkillIndex;
+        public Vector3 Direction;
+
+        public SkillCastData(int skillIndex, Vector3 direction)
+        {
+            SkillIndex = skillIndex;
+            Direction = direction;
+        }
     }
 }
 

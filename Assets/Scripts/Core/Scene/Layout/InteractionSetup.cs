@@ -34,21 +34,19 @@ namespace Core.Scene.Layout
             if (shapePresets.Length == 0)
                 return;
 
-            // Randomly select a shape preset
             int randomIndex = Random.Range(0, shapePresets.Length);
             GameObject shapePrefab = shapePresets[randomIndex];
 
             if (shapePrefab != null)
             {
-                // Instantiate the shape at the spawn point
                 GameObject shape = Instantiate(shapePrefab, spawnPoint.position, spawnPoint.rotation);
                 shape.transform.SetParent(spawnPoint);
 
-                // Initialize the interactive component if it exists
                 BaseInteractive interactive = shape.GetComponent<BaseInteractive>();
                 if (interactive != null)
                 {
-                    // Additional setup for the interactive component
+                    EventManager.Publish(EventNames.INTERACTIVE_SPAWNED, 
+                        new InteractiveSpawnedEvent(interactive, spawnPoint.position));
                 }
             }
         }

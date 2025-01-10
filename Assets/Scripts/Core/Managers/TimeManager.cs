@@ -16,9 +16,9 @@ namespace Core.Managers
 
         protected override void RegisterEvents()
         {
-            EventManager.Subscribe<EventManager.TimeEventData>(EventManager.EventNames.BULLET_FIRED, OnBulletTime);
-            EventManager.Subscribe<EventManager.TimeEventData>(EventManager.EventNames.BULLET_HIT, OnHitStop);
-            EventManager.Subscribe<EventManager.TimeEventData>(EventManager.EventNames.GAME_PAUSED, OnGamePaused);
+            EventManager.Subscribe<TimeEventData>(EventNames.BULLET_FIRED, OnBulletTime);
+            EventManager.Subscribe<TimeEventData>(EventNames.BULLET_HIT, OnHitStop);
+            EventManager.Subscribe<TimeEventData>(EventNames.GAME_PAUSED, OnGamePaused);
         }
 
         protected override void UnregisterEvents()

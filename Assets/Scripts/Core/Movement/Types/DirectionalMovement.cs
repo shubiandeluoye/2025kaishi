@@ -83,6 +83,17 @@ namespace Core.Movement.Types
             }
 
             SetMoveDirection(constrainedDirection);
+
+            var data = new EventManager.DirectionalMovementEventData(
+                transform.position,
+                constrainedDirection,
+                currentVelocity.magnitude,
+                isGrounded,
+                useLocalSpace,
+                movementType,
+                rawInputDirection
+            );
+            EventManager.Publish(EventManager.EventNames.MOVEMENT_DIRECTION_CHANGED, data);
         }
 
         /// <summary>

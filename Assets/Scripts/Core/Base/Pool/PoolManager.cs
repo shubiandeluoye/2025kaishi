@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.Base.Event;
 
 namespace Core.Base.Pool
 {
@@ -123,6 +124,10 @@ namespace Core.Base.Pool
                 obj.transform.rotation = rotation;
                 obj.SetActive(true);
                 OnObjectSpawned?.Invoke(poolId, obj);
+                
+                // 发布对象生成事件
+                EventManager.Publish(EventNames.POOL_OBJECT_SPAWNED, 
+                    new PoolObjectEvent(poolId, obj, position, rotation));
             }
             return obj;
         }
@@ -137,6 +142,10 @@ namespace Core.Base.Pool
 
             pool.Release(obj);
             OnObjectDespawned?.Invoke(poolId, obj);
+            
+            // 发布对象回收事件
+            EventManager.Publish(EventNames.POOL_OBJECT_DESPAWNED, 
+                new PoolObjectEvent(poolId, obj, obj.transform.position, obj.transform.rotation));
         }
 
         public void DespawnAll(string poolId)
@@ -148,13 +157,20 @@ namespace Core.Base.Pool
             }
 
             pool.ReleaseAll();
+            
+            // 发布池清空事件
+            EventManager.Publish(EventNames.POOL_CLEARED, 
+                new PoolClearedEvent(poolId));
         }
 
         public void DespawnAllPools()
         {
-            foreach (var pool in pools.Values)
+            foreach (var pool in pools)
             {
-                pool.ReleaseAll();
+                pool.Value.ReleaseAll();
+                // 发布池清空事件
+                EventManager.Publish(EventNames.POOL_CLEARED, 
+                    new PoolClearedEvent(pool.Key));
             }
         }
         #endregion
@@ -259,6 +275,33 @@ namespace Core.Base.Pool
             {
                 Release(obj);
             }
+        }
+    }
+
+    // 添加事件数据类
+    public class PoolObjectEvent
+    {
+        public string PoolId { get; private set; }
+        public GameObject Object { get; private set; }
+        public Vector3 Position { get; private set; }
+        public Quaternion Rotation { get; private set; }
+
+        public PoolObjectEvent(string poolId, GameObject obj, Vector3 position, Quaternion rotation)
+        {
+            PoolId = poolId;
+            Object = obj;
+            Position = position;
+            Rotation = rotation;
+        }
+    }
+
+    public class PoolClearedEvent
+    {
+        public string PoolId { get; private set; }
+
+        public PoolClearedEvent(string poolId)
+        {
+            PoolId = poolId;
         }
     }
 }

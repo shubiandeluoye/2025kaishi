@@ -30,6 +30,11 @@ namespace Core.Interactive.Base
         #endregion
 
         #region Unity生命周期
+        protected virtual void Awake()
+        {
+            // 基类的初始化逻辑
+        }
+
         protected virtual void OnEnable()
         {
             RegisterEvents();
@@ -55,9 +60,7 @@ namespace Core.Interactive.Base
         /// </summary>
         protected virtual void RegisterEvents()
         {
-            EventManager.Subscribe<EventManager.InteractionEventData>(
-                EventManager.EventNames.INTERACTION_START, 
-                OnInteractionStart);
+            EventManager.Subscribe<InteractionEventData>(EventNames.INTERACTION_START, OnInteractionStart);
         }
 
         /// <summary>
@@ -65,9 +68,7 @@ namespace Core.Interactive.Base
         /// </summary>
         protected virtual void UnregisterEvents()
         {
-            EventManager.Unsubscribe<EventManager.InteractionEventData>(
-                EventManager.EventNames.INTERACTION_START, 
-                OnInteractionStart);
+            EventManager.Unsubscribe<InteractionEventData>(EventNames.INTERACTION_START, OnInteractionStart);
         }
         #endregion
 
@@ -98,15 +99,13 @@ namespace Core.Interactive.Base
             
             currentInteractor = interactor;
             
-            // 发布交互开始事件
-            var interactionData = new EventManager.InteractionEventData
-            {
-                Interactor = interactor,
-                Target = gameObject,
-                InteractionType = "Start"
-            };
-            
-            EventManager.Publish(EventManager.EventNames.INTERACTION_START, interactionData);
+            EventManager.Publish(EventNames.INTERACTION_START, 
+                new InteractionEventData
+                {
+                    Interactor = interactor,
+                    Target = gameObject,
+                    InteractionType = "Start"
+                });
         }
 
         /// <summary>
@@ -116,14 +115,14 @@ namespace Core.Interactive.Base
         {
             if (currentInteractor != interactor) return;
             
-            var interactionData = new EventManager.InteractionEventData
-            {
-                Interactor = interactor,
-                Target = gameObject,
-                InteractionType = "End"
-            };
+            EventManager.Publish(EventNames.INTERACTION_END, 
+                new InteractionEventData
+                {
+                    Interactor = interactor,
+                    Target = gameObject,
+                    InteractionType = "End"
+                });
             
-            EventManager.Publish(EventManager.EventNames.INTERACTION_END, interactionData);
             currentInteractor = null;
         }
         #endregion
@@ -149,7 +148,7 @@ namespace Core.Interactive.Base
         /// <summary>
         /// 处理交互开始事件
         /// </summary>
-        protected virtual void OnInteractionStart(EventManager.InteractionEventData data)
+        protected virtual void OnInteractionStart(InteractionEventData data)
         {
             if (data.Target == gameObject)
             {
@@ -158,7 +157,7 @@ namespace Core.Interactive.Base
         }
         #endregion
 
-        #region 公共方法
+        #region Getters/Setters
         /// <summary>
         /// 设置是否可交互
         /// </summary>
@@ -196,9 +195,7 @@ namespace Core.Interactive.Base
         {
             interactionPrompt = prompt;
         }
-        #endregion
 
-        #region Getters
         public bool IsInteractable() => isInteractable;
         public bool IsHighlighted() => isHighlighted;
         public bool IsSelected() => isSelected;

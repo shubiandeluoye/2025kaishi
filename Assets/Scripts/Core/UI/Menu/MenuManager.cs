@@ -2,10 +2,13 @@ using UnityEngine;
 using Core.UI.Base;
 using UnityEngine.UI;
 using TMPro;
+using Core.Base.Event;
+using Core.UI.Events;
+using Core.Base.Event.Data.UI;
 
 namespace Core.UI.Menu
 {
-    public class MenuManager : BaseUIElement
+    public class MenuManager : BaseUIManager
     {
         [Header("Menu Panels")]
         [SerializeField] private GameObject mainMenuPanel;
@@ -37,6 +40,15 @@ namespace Core.UI.Menu
         {
             base.Awake();
             SetupButtonListeners();
+        }
+
+        protected override void RegisterEvents()
+        {
+            base.RegisterEvents();
+            EventManager.Subscribe<MenuStateEvent>(EventNames.MENU_SHOW, OnMenuShow);
+            EventManager.Subscribe<MenuStateEvent>(EventNames.MENU_HIDE, OnMenuHide);
+            EventManager.Subscribe<UIEvent>(EventNames.GAME_PAUSE, OnGamePause);
+            EventManager.Subscribe<UIEvent>(EventNames.GAME_RESUME, OnGameResume);
         }
 
         private void SetupButtonListeners()
@@ -146,6 +158,30 @@ namespace Core.UI.Menu
         private void OnFullscreenToggled(bool isFullscreen)
         {
             Screen.fullScreen = isFullscreen;
+        }
+
+        private void OnMenuShow(MenuStateEvent evt)
+        {
+            string menuName = evt.MenuName;
+            ShowUI(menuName);
+        }
+
+        private void OnMenuHide(MenuStateEvent evt)
+        {
+            string menuName = evt.MenuName;
+            HideUI(menuName);
+        }
+
+        private void OnGamePause(UIEvent evt)
+        {
+            ShowUI("PauseMenu");
+            Time.timeScale = 0;
+        }
+
+        private void OnGameResume(UIEvent evt)
+        {
+            HideUI("PauseMenu");
+            Time.timeScale = 1;
         }
     }
 }

@@ -1,10 +1,11 @@
 using UnityEngine;
 using Core.Base.Event;
-using Core.Base.Manager;
+using Core.UI.Base;
+using Core.UI.Events;
 
 namespace Core.UI.HUD
 {
-    public class HUDManager : BaseManager
+    public class HUDManager : BaseUIManager
     {
         [Header("UI References")]
         [SerializeField] private GameObject interactionPrompt;
@@ -13,45 +14,52 @@ namespace Core.UI.HUD
 
         protected override void RegisterEvents()
         {
-            EventManager.Subscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_START, OnInteractionStart);
-            EventManager.Subscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_END, OnInteractionEnd);
-            EventManager.Subscribe<EventManager.BulletEventData>(EventManager.EventNames.BULLET_HIT, OnBulletHit);
+            base.RegisterEvents();
+            EventManager.Subscribe<UIInteractionEvent>(EventNames.HUD_INTERACTION, OnInteractionEvent);
+            EventManager.Subscribe<UIEvent>(EventNames.HUD_COMBAT, OnCombatEvent);
+            EventManager.Subscribe<HUDUpdateEvent>(EventNames.HUD_UPDATE, OnHUDUpdate);
         }
 
         protected override void UnregisterEvents()
         {
-            EventManager.Unsubscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_START, OnInteractionStart);
-            EventManager.Unsubscribe<EventManager.InteractionEventData>(EventManager.EventNames.INTERACTION_END, OnInteractionEnd);
-            EventManager.Unsubscribe<EventManager.BulletEventData>(EventManager.EventNames.BULLET_HIT, OnBulletHit);
+            base.UnregisterEvents();
+            EventManager.Unsubscribe<UIEvent>("HUD_INTERACTION", OnInteractionEvent);
+            EventManager.Unsubscribe<UIEvent>("HUD_COMBAT", OnCombatEvent);
+            EventManager.Unsubscribe<UIEvent>("HUD_UPDATE", OnHUDUpdate);
         }
 
-        private void OnInteractionStart(EventManager.InteractionEventData data)
+        private void OnInteractionEvent(UIEvent evt)
         {
             if (interactionPrompt != null)
             {
-                interactionPrompt.SetActive(true);
+                bool shouldShow = (bool)evt.Data;
+                interactionPrompt.SetActive(shouldShow);
             }
         }
 
-        private void OnInteractionEnd(EventManager.InteractionEventData data)
+        private void OnCombatEvent(UIEvent evt)
         {
-            if (interactionPrompt != null)
+            if (evt.Type == UIEventType.CombatHit)
             {
-                interactionPrompt.SetActive(false);
+                if (hitMarker != null)
+                {
+                    StartCoroutine(ShowHitMarker());
+                }
+            }
+            else if (evt.Type == UIEventType.CombatDamage)
+            {
+                if (damageIndicator != null)
+                {
+                    float damage = (float)evt.Data;
+                    ShowDamageIndicator(damage);
+                }
             }
         }
 
-        private void OnBulletHit(EventManager.BulletEventData data)
+        private void OnHUDUpdate(UIEvent evt)
         {
-            if (hitMarker != null)
-            {
-                StartCoroutine(ShowHitMarker());
-            }
-
-            if (damageIndicator != null && data.Damage > 0)
-            {
-                ShowDamageIndicator(data.Damage);
-            }
+            // 处理HUD更新事件
+            // 比如更新血量、弹药、分数等
         }
 
         private System.Collections.IEnumerator ShowHitMarker()

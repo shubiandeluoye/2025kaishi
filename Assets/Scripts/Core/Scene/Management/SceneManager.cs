@@ -41,13 +41,17 @@ namespace Core.Scene.Management
             if (loadingScreen != null)
                 loadingScreen.SetActive(true);
 
-            float startTime = Time.realtimeSinceStartup;
+            EventManager.Publish(EventNames.SCENE_LOADING_START, 
+                new SceneLoadingEvent(sceneName, 0f));
 
+            float startTime = Time.realtimeSinceStartup;
             var operation = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
             operation.allowSceneActivation = false;
 
             while (operation.progress < 0.9f)
             {
+                EventManager.Publish(EventNames.SCENE_LOADING_PROGRESS, 
+                    new SceneLoadingEvent(sceneName, operation.progress));
                 yield return null;
             }
 
@@ -61,6 +65,9 @@ namespace Core.Scene.Management
 
             if (loadingScreen != null)
                 loadingScreen.SetActive(false);
+
+            EventManager.Publish(EventNames.SCENE_LOADING_COMPLETE, 
+                new SceneLoadingEvent(sceneName, 1f));
         }
 
         public void LoadScene(string sceneName)

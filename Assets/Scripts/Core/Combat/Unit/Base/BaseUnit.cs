@@ -1,189 +1,96 @@
 using UnityEngine;
-using System;
-using System.Collections.Generic;
+using Core.Base.Manager;
 using Core.Base.Event;
 
 namespace Core.Combat.Unit.Base
 {
-    /// <summary>
-    /// Base class for all game units (players, enemies, etc.)
-    /// Implements core unit functionality including stats, status effects, and collision
-    /// </summary>
-    public abstract class BaseUnit : MonoBehaviour
+    public abstract class BaseUnit : BaseManager
     {
-        #region Stats
-        [Serializable]
-        public class UnitStats
-        {
-            public float maxHealth = 100f;
-            public float currentHealth;
-            public float moveSpeed = 5f;
-            public float defense = 10f;
-            public float attack = 10f;
-            
-            public void Initialize()
-            {
-                currentHealth = maxHealth;
-            }
-        }
-
-        [SerializeField]
-        protected UnitStats stats = new UnitStats();
+        [Header("Unit Settings")]
+        [SerializeField] protected float moveSpeed = 5f;
+        [SerializeField] protected float rotateSpeed = 360f;
         
-        public float CurrentHealth => stats.currentHealth;
-        public float MaxHealth => stats.maxHealth;
-        public float MoveSpeed => stats.moveSpeed;
-        public float Defense => stats.defense;
-        public float Attack => stats.attack;
-        #endregion
+        protected bool isAlive = true;
+        protected Vector3 moveDirection;
+        protected Vector3 lookDirection;
 
-        #region Status Effects
-        protected Dictionary<string, StatusEffect> activeStatusEffects = new Dictionary<string, StatusEffect>();
-        
-        [Serializable]
-        public class StatusEffect
+        protected override void OnManagerAwake()
         {
-            public string id;
-            public string name;
-            public float duration;
-            public float remainingTime;
-            public Dictionary<string, float> statModifiers = new Dictionary<string, float>();
-            
-            public bool IsExpired => remainingTime <= 0;
-            
-            public void Update(float deltaTime)
-            {
-                if (remainingTime > 0)
-                {
-                    remainingTime -= deltaTime;
-                }
-            }
-        }
-        #endregion
-
-        #region Events
-        public event Action<float> OnHealthChanged;
-        public event Action<StatusEffect> OnStatusEffectAdded;
-        public event Action<StatusEffect> OnStatusEffectRemoved;
-        public event Action OnDeath;
-        #endregion
-
-        #region Unity Lifecycle
-        protected virtual void Awake()
-        {
-            stats.Initialize();
+            base.OnManagerAwake();
+            moveDirection = Vector3.zero;
+            lookDirection = transform.forward;
         }
 
         protected virtual void Update()
         {
-            UpdateStatusEffects();
+            if (!isAlive) return;
+            
+            HandleMovement();
+            HandleRotation();
         }
 
-        protected virtual void OnCollisionEnter(Collision collision)
+        protected virtual void HandleMovement()
         {
-            HandleCollision(collision);
-        }
-        #endregion
-
-        #region Health Management
-        public virtual void TakeDamage(float amount, BaseUnit source = null)
-        {
-            float finalDamage = CalculateDamage(amount, source);
-            stats.currentHealth = Mathf.Max(0, stats.currentHealth - finalDamage);
-            
-            OnHealthChanged?.Invoke(stats.currentHealth);
-            
-            if (stats.currentHealth <= 0)
+            if (moveDirection.sqrMagnitude > 0.01f)
             {
-                Die();
+                transform.position += moveDirection * moveSpeed * Time.deltaTime;
+                EventManager.Publish(EventNames.UNIT_MOVED, 
+                    new UnitMovedEvent(gameObject, transform.position));
             }
         }
 
-        public virtual void Heal(float amount)
+        protected virtual void HandleRotation()
         {
-            stats.currentHealth = Mathf.Min(stats.maxHealth, stats.currentHealth + amount);
-            OnHealthChanged?.Invoke(stats.currentHealth);
-        }
-
-        protected virtual float CalculateDamage(float amount, BaseUnit source)
-        {
-            // Basic damage calculation with defense
-            float damage = amount * (100 / (100 + stats.defense));
-            return damage;
-        }
-
-        protected virtual void Die()
-        {
-            OnDeath?.Invoke();
-            // Override in derived classes for specific death behavior
-        }
-        #endregion
-
-        #region Status Effect Management
-        public virtual void AddStatusEffect(StatusEffect effect)
-        {
-            if (activeStatusEffects.ContainsKey(effect.id))
+            if (lookDirection.sqrMagnitude > 0.01f)
             {
-                RemoveStatusEffect(effect.id);
-            }
-            
-            activeStatusEffects[effect.id] = effect;
-            ApplyStatusEffectModifiers(effect);
-            OnStatusEffectAdded?.Invoke(effect);
-        }
-
-        public virtual void RemoveStatusEffect(string effectId)
-        {
-            if (activeStatusEffects.TryGetValue(effectId, out StatusEffect effect))
-            {
-                RemoveStatusEffectModifiers(effect);
-                activeStatusEffects.Remove(effectId);
-                OnStatusEffectRemoved?.Invoke(effect);
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    targetRotation,
+                    rotateSpeed * Time.deltaTime
+                );
+                
+                EventManager.Publish(EventNames.UNIT_ROTATED, 
+                    new UnitRotatedEvent(gameObject, transform.rotation));
             }
         }
 
-        protected virtual void UpdateStatusEffects()
+        public virtual void SetMoveDirection(Vector3 direction)
         {
-            List<string> expiredEffects = new List<string>();
-            
-            foreach (var effect in activeStatusEffects.Values)
-            {
-                effect.Update(Time.deltaTime);
-                if (effect.IsExpired)
-                {
-                    expiredEffects.Add(effect.id);
-                }
-            }
-            
-            foreach (var effectId in expiredEffects)
-            {
-                RemoveStatusEffect(effectId);
-            }
+            moveDirection = direction.normalized;
+            EventManager.Publish(EventNames.UNIT_DIRECTION_CHANGED, 
+                new UnitDirectionEvent(gameObject, direction, true));
         }
 
-        protected virtual void ApplyStatusEffectModifiers(StatusEffect effect)
+        public virtual void SetLookDirection(Vector3 direction)
         {
-            // Override in derived classes to apply specific stat modifications
+            lookDirection = direction.normalized;
+            EventManager.Publish(EventNames.UNIT_DIRECTION_CHANGED, 
+                new UnitDirectionEvent(gameObject, direction, false));
         }
+    }
 
-        protected virtual void RemoveStatusEffectModifiers(StatusEffect effect)
-        {
-            // Override in derived classes to remove specific stat modifications
-        }
-        #endregion
+    public class UnitMovedEvent
+    {
+        public GameObject Unit { get; private set; }
+        public Vector3 Position { get; private set; }
 
-        #region Collision Handling
-        protected virtual void HandleCollision(Collision collision)
+        public UnitMovedEvent(GameObject unit, Vector3 position)
         {
-            // Override in derived classes for specific collision behavior
+            Unit = unit;
+            Position = position;
         }
-        #endregion
+    }
 
-        #region Stats Modification
-        public virtual void ModifyStat(string statName, float modifier, bool isMultiplicative = false)
+    public class UnitRotatedEvent
+    {
+        public GameObject Unit { get; private set; }
+        public Quaternion Rotation { get; private set; }
+
+        public UnitRotatedEvent(GameObject unit, Quaternion rotation)
         {
-            // Override in derived classes to handle specific stat modifications
+            Unit = unit;
+            Rotation = rotation;
         }
-        #endregion
     }
 }

@@ -122,5 +122,21 @@ namespace Core.Skills.Shooting
             public float CurrentDamage;
             public float DamageDecay;
         }
+
+        protected override void OnSkillExecute(Vector3 direction)
+        {
+            // ... 现有代码 ...
+
+            // 发布弹跳子弹事件
+            EventManager.Publish(EventNames.BOUNCING_BULLET_FIRED, 
+                new BouncingBulletEventData(
+                    bulletData.Position,
+                    direction,
+                    bounceData.CurrentDamage,
+                    maxBounces,
+                    damageDecay,
+                    path.ToArray()
+                ));
+        }
     }
 }

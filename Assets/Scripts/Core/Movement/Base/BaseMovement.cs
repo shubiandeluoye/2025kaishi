@@ -240,5 +240,16 @@ namespace Core.Movement.Base
         public float GetCurrentSpeed() => currentVelocity.magnitude;
         public float GetMaxSpeed() => settings.maxSpeed;
         #endregion
+
+        protected virtual void OnMoveStart(Vector3 direction)
+        {
+            var data = new EventManager.MovementEventData(
+                transform.position,
+                direction,
+                currentVelocity.magnitude,
+                isGrounded
+            );
+            EventManager.Publish(EventManager.EventNames.MOVEMENT_START, data);
+        }
     }
 }

@@ -3,12 +3,35 @@ using Core.Interactive.Base;
 
 namespace Core.Scene.Layout
 {
-    public class SceneLayout : MonoBehaviour
+    public class SceneLayout : BaseManager
     {
         [Header("Layout Settings")]
         [SerializeField] private Transform playerSpawnPoint;
         [SerializeField] private Transform[] interactivePoints;
         [SerializeField] private Transform[] obstaclePoints;
+
+        protected override void RegisterEvents()
+        {
+            EventManager.Subscribe<SpawnRequestEvent>(EventNames.SPAWN_REQUEST, OnSpawnRequest);
+        }
+
+        protected override void UnregisterEvents()
+        {
+            EventManager.Unsubscribe<SpawnRequestEvent>(EventNames.SPAWN_REQUEST, OnSpawnRequest);
+        }
+
+        private void OnSpawnRequest(SpawnRequestEvent evt)
+        {
+            switch (evt.SpawnType)
+            {
+                case SpawnType.Interactive:
+                    SpawnInteractiveElements();
+                    break;
+                case SpawnType.Obstacle:
+                    SpawnObstacles();
+                    break;
+            }
+        }
 
         private void Start()
         {

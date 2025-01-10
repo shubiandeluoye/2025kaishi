@@ -1,102 +1,85 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Core.Combat.Unit.Base;
+using Core.Base.Manager;
+using Core.Base.Event;
+using Core.Combat.ShootPoint;
 using Core.Skills.Base;
-using Core.Skills.Shooting;
 
 namespace Core.Skills
 {
-    /// <summary>
-    /// Manages skills for a game entity
-    /// </summary>
-    public class SkillManager : MonoBehaviour
+    public class SkillManager : BaseManager
     {
-        private BaseShooter shooter;
-        private List<BaseSkill> skills = new List<BaseSkill>();
+        [SerializeField] private List<BaseSkill> skillList = new List<BaseSkill>();
+        private Dictionary<int, BaseSkill> skills = new Dictionary<int, BaseSkill>();
 
-        private void Awake()
+        protected override void OnManagerAwake()
         {
-            shooter = GetComponent<BaseShooter>();
-            if (shooter == null)
-            {
-                Debug.LogError("SkillManager requires a BaseShooter component!");
-                return;
-            }
-
-            // 收集所有技能
-            skills.AddRange(GetComponents<BaseSkill>());
+            base.OnManagerAwake();
+            InitializeSkills();
         }
 
-        /// <summary>
-        /// 检查指定索引的技能是否可用
-        /// </summary>
-        /// <param name="skillIndex">技能索引</param>
-        /// <returns>技能是否可用</returns>
-        public bool IsSkillReady(int skillIndex)
+        protected override void RegisterEvents()
         {
-            if (skillIndex < 0 || skillIndex >= skills.Count)
-            {
-                Debug.LogWarning($"Invalid skill index: {skillIndex}");
-                return false;
-            }
-
-            return skills[skillIndex].IsReady;
+            EventManager.Subscribe<SkillExecuteEvent>(EventNames.SKILL_EXECUTE, OnSkillExecute);
         }
 
-        /// <summary>
-        /// 执行指定索引的技能
-        /// </summary>
+        protected override void UnregisterEvents()
+        {
+            EventManager.Unsubscribe<SkillExecuteEvent>(EventNames.SKILL_EXECUTE, OnSkillExecute);
+        }
+
+        private void InitializeSkills()
+        {
+            skills.Clear();
+            for (int i = 0; i < skillList.Count; i++)
+            {
+                if (skillList[i] != null)
+                {
+                    skills[i] = skillList[i];
+                    EventManager.Publish(EventNames.SKILL_INITIALIZED, 
+                        new SkillInitializedEvent(i, skillList[i]));
+                }
+            }
+        }
+
+        private void OnSkillExecute(SkillExecuteEvent evt)
+        {
+            ExecuteSkill(evt.SkillIndex, evt.Direction);
+        }
+
         public void ExecuteSkill(int skillIndex, Vector3 direction)
         {
-            if (skillIndex < 0 || skillIndex >= skills.Count)
+            if (skills.TryGetValue(skillIndex, out BaseSkill skill))
             {
-                Debug.LogWarning($"Invalid skill index: {skillIndex}");
-                return;
-            }
-
-            var skill = skills[skillIndex];
-            if (skill.IsReady)
-            {
-                skill.Execute(direction);
-            }
-        }
-
-        /// <summary>
-        /// 获取所有技能列表
-        /// </summary>
-        public IReadOnlyList<BaseSkill> GetSkills()
-        {
-            return skills;
-        }
-
-        /// <summary>
-        /// 添加新技能
-        /// </summary>
-        public void AddSkill(BaseSkill skill)
-        {
-            if (!skills.Contains(skill))
-            {
-                skills.Add(skill);
+                if (skill.IsReady)
+                {
+                    EventManager.Publish(EventNames.SHOOT_POINT_UPDATE, 
+                        new ShootPointEvent(ShootPointEventType.Direction, direction));
+                    skill.Execute(direction);
+                }
+                else
+                {
+                    EventManager.Publish(EventNames.SKILL_NOT_READY, 
+                        new SkillNotReadyEvent(skillIndex, skill.CurrentCooldown));
+                }
             }
         }
 
-        /// <summary>
-        /// 移除技能
-        /// </summary>
-        public void RemoveSkill(BaseSkill skill)
+        public bool IsSkillReady(int skillIndex)
         {
-            skills.Remove(skill);
+            return skills.TryGetValue(skillIndex, out BaseSkill skill) && skill.IsReady;
         }
+    }
 
-        /// <summary>
-        /// 更新所有技能的冷却时间
-        /// </summary>
-        private void Update()
+    public class SkillExecuteEvent
+    {
+        public int SkillIndex { get; private set; }
+        public Vector3 Direction { get; private set; }
+
+        public SkillExecuteEvent(int skillIndex, Vector3 direction)
         {
-            foreach (var skill in skills)
-            {
-                skill.UpdateCooldown(Time.deltaTime);
-            }
+            SkillIndex = skillIndex;
+            Direction = direction;
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using Core.Skills.Base;
 using Core.Combat.Unit.Base;
+using Core.Base.Event;
 
 namespace Core.Skills.Shooting
 {
@@ -19,12 +20,15 @@ namespace Core.Skills.Shooting
             shooterComponent = GetComponent<BaseShooter>();
         }
 
-        public override void Execute(Vector3 direction)
+        protected override void OnSkillExecute(Vector3 direction)
         {
-            if (!IsReady || shooterComponent == null) return;
+            if (shooterComponent == null) return;
 
+            Vector3[] directions = new Vector3[projectileCount];
+            
             if (projectileCount == 1)
             {
+                directions[0] = direction;
                 shooterComponent.Shoot(direction);
             }
             else
@@ -35,12 +39,13 @@ namespace Core.Skills.Shooting
                 for (int i = 0; i < projectileCount; i++)
                 {
                     float currentAngle = startAngle + (angleStep * i);
-                    Vector3 rotatedDirection = Quaternion.Euler(0, currentAngle, 0) * direction;
-                    shooterComponent.Shoot(rotatedDirection);
+                    directions[i] = Quaternion.Euler(0, currentAngle, 0) * direction;
+                    shooterComponent.Shoot(directions[i]);
                 }
             }
 
-            currentCooldown = cooldownDuration;
+            EventManager.Publish(EventNames.DIRECTIONAL_SHOT_FIRED, 
+                new SpreadShotEventData(projectileCount, spreadAngle, false, directions));
         }
     }
 }

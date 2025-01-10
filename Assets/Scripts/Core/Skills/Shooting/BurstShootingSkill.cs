@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using Core.Skills.Base;
 using Core.Combat.Unit.Base;
+using Core.Base.Event;
 
 namespace Core.Skills.Shooting
 {
@@ -22,9 +23,9 @@ namespace Core.Skills.Shooting
             shooterComponent = GetComponent<BaseShooter>();
         }
 
-        public override void Execute(Vector3 direction)
+        protected override void OnSkillExecute(Vector3 direction)
         {
-            if (!IsReady || shooterComponent == null) return;
+            if (shooterComponent == null) return;
             
             if (burstCoroutine != null)
             {
@@ -32,16 +33,21 @@ namespace Core.Skills.Shooting
             }
             
             burstCoroutine = StartCoroutine(ExecuteBurst(direction));
-            currentCooldown = cooldownDuration;
         }
 
         private IEnumerator ExecuteBurst(Vector3 direction)
         {
+            EventManager.Publish(EventNames.BURST_SHOT_START, 
+                new BurstShotEventData(burstCount, burstDelay, direction));
+
             for (int i = 0; i < burstCount; i++)
             {
                 shooterComponent.Shoot(direction);
                 yield return new WaitForSeconds(burstDelay);
             }
+
+            EventManager.Publish(EventNames.BURST_SHOT_END, 
+                new BurstShotEventData(burstCount, burstDelay, direction));
         }
 
         private void OnDisable()

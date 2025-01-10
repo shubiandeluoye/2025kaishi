@@ -1,7 +1,9 @@
 using UnityEngine;
 using System;
 using Core.Base.Pool;
+using Core.Base.Event;
 using Core.Combat.Unit.Base;
+using Core.Combat.Team;
 
 namespace Core.Combat.Bullet
 {
@@ -9,7 +11,7 @@ namespace Core.Combat.Bullet
     /// 子弹系统的基础类
     /// 提供基本的移动、碰撞和生命周期管理
     /// </summary>
-    public abstract class BaseBullet : MonoBehaviour
+    public abstract class BaseBullet : MonoBehaviour, ITeamMember
     {
         #region Properties
         /// <summary>
@@ -38,14 +40,21 @@ namespace Core.Combat.Bullet
         [SerializeField]
         protected BulletSettings settings = new BulletSettings();
         
+        [Header("Team Settings")]
+        [SerializeField]
+        [Tooltip("子弹所属队伍")]
+        protected TeamType team = TeamType.System;
+
         // 添加公共访问器
         public BulletSettings Settings => settings;
+        public TeamType Team => team;
+        public float Damage => settings.damage;
 
         protected Vector3 direction;
         protected bool isInitialized;
         protected Rigidbody rb;
         protected float currentLifetime;
-        protected BaseUnit owner;  // 从老版本添加
+        protected BaseUnit owner;
         #endregion
 
         #region Events
@@ -104,12 +113,13 @@ namespace Core.Combat.Bullet
         /// <summary>
         /// 初始化子弹
         /// </summary>
-        public virtual void Initialize(Vector3 direction, float? speed = null, float? damage = null, BaseUnit owner = null)
+        public virtual void Initialize(Vector3 direction, float? speed = null, float? damage = null, BaseUnit owner = null, TeamType? team = null)
         {
             this.direction = direction.normalized;
             if (speed.HasValue) settings.speed = speed.Value;
             if (damage.HasValue) settings.damage = damage.Value;
-            this.owner = owner;  // 从老版本添加
+            if (team.HasValue) this.team = team.Value;
+            this.owner = owner;
             
             isInitialized = true;
             
@@ -147,9 +157,18 @@ namespace Core.Combat.Bullet
             {
                 // 检查是否击中可伤害单位
                 BaseUnit hitUnit = collision.gameObject.GetComponent<BaseUnit>();
-                if (hitUnit != null && hitUnit != owner)
+                if (hitUnit != null)
                 {
-                    ApplyDamage(hitUnit);
+                    // 检查队伍关系
+                    var hitTeamMember = hitUnit as ITeamMember;
+                    if (hitTeamMember != null && !TeamSystem.IsFriend(team, hitTeamMember.Team))
+                    {
+                        ApplyDamage(hitUnit);
+                        
+                        // 发布子弹命中事件
+                        EventManager.Publish(EventNames.BULLET_HIT, 
+                            new BulletHitEvent(hitUnit.gameObject, settings.damage, collision.contacts[0].point));
+                    }
                 }
 
                 OnBulletCollision?.Invoke(collision);
@@ -212,6 +231,11 @@ namespace Core.Combat.Bullet
         public virtual void DestroyBullet()
         {
             OnBulletDestroy?.Invoke(this);
+            
+            // 发布子弹销毁事件
+            EventManager.Publish(EventNames.BULLET_DESTROYED, 
+                new BulletDestroyedEvent(this, transform.position));
+                
             if (PoolManager.Instance != null)
             {
                 PoolManager.Instance.Despawn("Bullet", gameObject);
@@ -255,6 +279,10 @@ namespace Core.Combat.Bullet
             {
                 rb.velocity = direction * settings.speed;
             }
+
+            // 发布轨迹修改事件
+            EventManager.Publish(EventNames.BULLET_TRAJECTORY_MODIFIED, 
+                new BulletTrajectoryEvent(gameObject, direction, 0f, true));
         }
         #endregion
     }
